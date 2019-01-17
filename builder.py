@@ -5,33 +5,29 @@ import config
 initial_y = config.VIEWPORT_H / config.SCALE
 
 
-def generate_terrian(world, W, H, CHUNKS, np_random):
+def generate_terrian(world, W, H):
 
-    height = np_random.uniform(0, H / 2, size=(CHUNKS + 1,))
-    chunk_x = [W / (CHUNKS - 1) * i for i in range(CHUNKS)]
-    helipad_y = H / 4
-    height[CHUNKS // 2 - 2] = helipad_y
-    height[CHUNKS // 2 - 1] = helipad_y
-    height[CHUNKS // 2 + 0] = helipad_y
-    height[CHUNKS // 2 + 1] = helipad_y
-    height[CHUNKS // 2 + 2] = helipad_y
-    smooth_y = [0.33 * (height[i - 1] + height[i + 0] + height[i + 1]) for i in range(CHUNKS)]
 
-    terrian = world.CreateStaticBody(shapes=edgeShape(vertices=[(0, 0), (W, 0)]))
-    terrian.color1 = (0.0, 0.0, 0.0)
-    terrian.color2 = (0.0, 0.0, 0.0)
+    g_x1, g_x2, g_y = config.GOAL_WIDTH_SCALAR[0]*W, config.GOAL_WIDTH_SCALAR[1]*W, H*config.GOAL_HEIGHT_SCALAR
 
-    sky_polys = []
-    for i in range(CHUNKS - 1):
-        p1 = (chunk_x[i], smooth_y[i])
-        p2 = (chunk_x[i + 1], smooth_y[i + 1])
-        terrian.CreateEdgeFixture(
-            vertices=[p1, p2],
-            density=0,
-            friction=0.1)
-        sky_polys.append([p1, p2, (p2[0], H), (p1[0], H)])
+    pad = world.CreateStaticBody(
+    position=(0,0),
+    shapes=polygonShape(vertices=[(g_x1, H/4),(g_x1, g_y), (g_x2, g_y), [g_x2, H/4]])
+    )
 
-    return (sky_polys, terrian)
+    pad.color1 = (0.4,0.4,0.4)
+    pad.color2 = (0.4,0.4,0.4)
+
+    terrian = world.CreateStaticBody(
+    position=(0,0),
+    shapes=polygonShape(vertices=[(0, 0),(0, H/4), (W, H/4), [W, 0]]),
+    )
+
+
+    terrian.color1 = (0.2,0.6,1)
+    terrian.color2 = (0.2,0.6,1)
+
+    return terrian, pad
 
 def generate_booster(world, np_random): 
     booster = world.CreateDynamicBody(
@@ -45,8 +41,9 @@ def generate_booster(world, np_random):
             maskBits=0x001,  # collide only with ground
             restitution=0.0)  # 0.99 bouncy
     )
-    booster.color1 = (0.5, 0.4, 0.9)
-    booster.color2 = (0.3, 0.3, 0.5)
+
+    booster.color1 = (0.4, 0.4, 0.4)
+    booster.color2 = (0.4, 0.4, 0.4)
     booster.ApplyForceToCenter((
         np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM),
         np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM)
@@ -69,8 +66,8 @@ def generate_landing_legs(world, booster):
                 maskBits=0x001)
         )
         leg.ground_contact = False
-        leg.color1 = (0.5, 0.4, 0.9)
-        leg.color2 = (0.3, 0.3, 0.5)
+        leg.color1 = (0.35, 0.35, 0.35)
+        leg.color2 = (0.35, 0.35, 0.35)
         rjd = revoluteJointDef(
             bodyA=booster,
             bodyB=leg,
