@@ -1,6 +1,6 @@
 from lunarlander import (LunarLander, LunarLanderContinuous)
 import numpy as np
-
+import sys
 # Rocket trajectory optimization is a classic topic in Optimal Control.
 #
 # According to Pontryagin's maximum principle it's optimal to fire engine full throttle or
@@ -77,13 +77,39 @@ def demo_heuristic_lander(env, seed=None, render=False):
             if still_open == False: break
 
         if steps % 20 == 0 or done:
-            print("observations:", " ".join(["{:+0.2f}".format(x) for x in s]))
-            print("step {} total_reward {:+0.2f}".format(steps, total_reward))
+            #print("observations:", " ".join(["{:+0.2f}".format(x) for x in s]))
+            #print("step {} total_reward {:+0.2f}".format(steps, total_reward))
+            continue
+
+        print(steps)
+        if steps > 100:
+            env.render(close=True)
+            break
+            quit()
+
         steps += 1
-        # if done: break
+        if done: break
+    return total_reward
+
+def test_lander(env, seed=None, render=False):
+    env.seed(seed)
+    total_reward = 0
+    steps = 0
+    s = env.reset()
+    while True:
+        s = env.step(2)
+
+        if render:
+            still_open = env.render()
+            if still_open == False: break
+
+        steps += 1
     return total_reward
 
 
 if __name__ == '__main__':
-    demo_heuristic_lander(LunarLander(), render=True)
+    if sys.argv[1] == 'test':
+        test_lander(LunarLander(), render=True)
+    else:
+        demo_heuristic_lander(LunarLander(), render=True)
 
