@@ -28,7 +28,7 @@ class LunarLander(gym.Env, EzPickle):
         self.viewer = None
 
         self.world = Box2D.b2World()
-        self.moon = None
+        self.terrian = None
         self.lander = None
         self.particles = []
 
@@ -53,11 +53,11 @@ class LunarLander(gym.Env, EzPickle):
         return [seed]
 
     def _destroy(self):
-        if not self.moon: return
+        if not self.terrian: return
         self.world.contactListener = None
         self._clean_particles(True)
-        self.world.DestroyBody(self.moon)
-        self.moon = None
+        self.world.DestroyBody(self.terrian)
+        self.terrian = None
         self.world.DestroyBody(self.lander)
         self.lander = None
         self.world.DestroyBody(self.legs[0])
@@ -75,13 +75,14 @@ class LunarLander(gym.Env, EzPickle):
 
         # GENERATE TERRIAN
         CHUNKS = 10
-        self.sky_polys, self.moon = builder.generate_terrian(self.world, W, H, CHUNKS, self.np_random)
+        self.terrian, self.pad = builder.generate_terrian(self.world, W, H)
 
         # GENERATE HELIPAD POLES
         chunk_x = [W / (CHUNKS - 1) * i for i in range(CHUNKS)]
-        self.helipad_x1 = chunk_x[CHUNKS // 2 - 1]
-        self.helipad_x2 = chunk_x[CHUNKS // 2 + 1]
-        self.helipad_y = H / 4
+
+        self.helipad_x1 = config.GOAL_WIDTH_SCALAR[0]*W
+        self.helipad_x2 = config.GOAL_WIDTH_SCALAR[1]*W
+        self.helipad_y = H*config.GOAL_HEIGHT_SCALAR
 
         # GENERATE LANDER
         self.lander = builder.generate_booster(self.world, self.np_random)
@@ -89,10 +90,11 @@ class LunarLander(gym.Env, EzPickle):
         # GENERATE LEGS
         self.legs = builder.generate_landing_legs(self.world, self.lander)
 
-        self.drawlist = [self.lander] + self.legs
+        self.drawlist = [self.lander, self.terrian, self.pad] + self.legs
 
         return self.step(np.array([0, 0]) if self.continuous else 0)[0]
 
+    # Exhaust create
     def _create_particle(self, mass, x, y, ttl):
         p = builder.generate_particle(self.world, x, y, mass)
         p.ttl = ttl
@@ -100,10 +102,12 @@ class LunarLander(gym.Env, EzPickle):
         self._clean_particles(False)
         return p
 
+    # Exhaust delete
     def _clean_particles(self, all):
         while self.particles and (all or self.particles[0].ttl < 0):
             self.world.DestroyBody(self.particles.pop(0))
 
+    # One step in the envrionment
     def step(self, action):
         if self.continuous:
             action = np.clip(action, -1, +1).astype(np.float32)
@@ -115,9 +119,10 @@ class LunarLander(gym.Env, EzPickle):
         side = (-tip[1], tip[0])
         dispersion = [self.np_random.uniform(-1.0, +1.0) / config.SCALE for _ in range(2)]
 
+        # Main engine
         m_power = 0.0
         if (self.continuous and action[0] > 0.0) or (not self.continuous and action == 2):
-            # Main engine
+           
             if self.continuous:
                 m_power = (np.clip(action[0], 0.0, 1.0) + 1.0) * 0.5  # 0.5..1.0
                 assert m_power >= 0.5 and m_power <= 1.0
@@ -134,9 +139,10 @@ class LunarLander(gym.Env, EzPickle):
             self.lander.ApplyLinearImpulse((-ox * config.MAIN_ENGINE_POWER * m_power, -oy * config.MAIN_ENGINE_POWER * m_power),
                                            impulse_pos, True)
 
+        # Orientation engines
         s_power = 0.0
         if (self.continuous and np.abs(action[1]) > 0.5) or (not self.continuous and action in [1, 3]):
-            # Orientation engines
+      
             if self.continuous:
                 direction = np.sign(action[1])
                 s_power = np.clip(np.abs(action[1]), 0.5, 1.0)
@@ -154,8 +160,10 @@ class LunarLander(gym.Env, EzPickle):
             self.lander.ApplyLinearImpulse((-ox * config.SIDE_ENGINE_POWER * s_power, -oy * config.SIDE_ENGINE_POWER * s_power),
                                            impulse_pos, True)
 
+        # Step a reasonable amount in Box2D
         self.world.Step(1.0 / config.FPS, 6 * 30, 2 * 30)
 
+        # Update state
         pos = self.lander.position
         vel = self.lander.linearVelocity
         state = [
@@ -170,6 +178,8 @@ class LunarLander(gym.Env, EzPickle):
         ]
         assert len(state) == 8
 
+        # Calculate reward
+
         reward = 0
         shaping = \
             - 100 * np.sqrt(state[0] * state[0] + state[1] * state[1]) \
@@ -183,6 +193,7 @@ class LunarLander(gym.Env, EzPickle):
         reward -= m_power * 0.30  # less fuel spent is better, about -30 for heurisic landing
         reward -= s_power * 0.03
 
+        # See if state is done
         done = False
         if self.game_over or abs(state[0]) >= 1.0:
             done = True
@@ -193,22 +204,29 @@ class LunarLander(gym.Env, EzPickle):
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):
+
+        # (l,b), (l,t), (r,t), (r,b)
         from gym.envs.classic_control import rendering
+        
+        # Gym Viewer 
         if self.viewer is None:
             self.viewer = rendering.Viewer(config.VIEWPORT_W, config.VIEWPORT_H)
             self.viewer.set_bounds(0, config.VIEWPORT_W / config.SCALE, 0, config.VIEWPORT_H / config.SCALE)
 
+        # Render exhaust
         for obj in self.particles:
             obj.ttl -= 0.15
             obj.color1 = (max(0.2, 0.2 + obj.ttl), max(0.2, 0.5 * obj.ttl), max(0.2, 0.5 * obj.ttl))
             obj.color2 = (max(0.2, 0.2 + obj.ttl), max(0.2, 0.5 * obj.ttl), max(0.2, 0.5 * obj.ttl))
 
+        #????
         self._clean_particles(False)
 
-        for p in self.sky_polys:
-            self.viewer.draw_polygon(p, color=(0, 0, 0))
+        self.viewer.draw_polygon([(0,0),(0,config.VIEWPORT_H), (config.VIEWPORT_W, config.VIEWPORT_H), (config.VIEWPORT_W, 0)], color=(0.2, 0.8, 1))
 
+        # Render fixtures? 
         for obj in self.particles + self.drawlist:
+
             for f in obj.fixtures:
                 trans = f.body.transform
                 if type(f.shape) is circleShape:
@@ -221,11 +239,11 @@ class LunarLander(gym.Env, EzPickle):
                     path.append(path[0])
                     self.viewer.draw_polyline(path, color=obj.color2, linewidth=2)
 
+        # Render helipad falgs
         for x in [self.helipad_x1, self.helipad_x2]:
-            flagy1 = self.helipad_y
-            flagy2 = flagy1 + 50 / config.SCALE
-            self.viewer.draw_polyline([(x, flagy1), (x, flagy2)], color=(1, 1, 1))
-            self.viewer.draw_polygon([(x, flagy2), (x, flagy2 - 10 / config.SCALE), (x + 25 / config.SCALE, flagy2 - 5 / config.SCALE)],
+            flagy1 = self.helipad_y + 1 / config.SCALE
+            flagy2 = flagy1 - 42 / config.SCALE
+            self.viewer.draw_polygon([(x-1 / config.SCALE, flagy2), (x-1 / config.SCALE, flagy1), (x + 20 / config.SCALE, flagy1), (x + 20 / config.SCALE, flagy2)],
                                      color=(0.8, 0.8, 0))
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
