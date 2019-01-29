@@ -1,4 +1,4 @@
-from lunarlander import (LunarLander, LunarLanderContinuous)
+from lunarlander import (LunarLander)
 import numpy as np
 import sys
 # Rocket trajectory optimization is a classic topic in Optimal Control.
@@ -80,12 +80,6 @@ def demo_heuristic_lander(env, seed=None, render=False):
             #print("observations:", " ".join(["{:+0.2f}".format(x) for x in s]))
             #print("step {} total_reward {:+0.2f}".format(steps, total_reward))
             continue
-
-        print(steps)
-        if steps > 100:
-            env.render(close=True)
-            break
-            quit()
 
         steps += 1
         if done: break

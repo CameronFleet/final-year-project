@@ -34,6 +34,7 @@ def generate_booster(world, W, H, np_random):
     booster = world.CreateDynamicBody(
         position=(W/2, 3*H/4),
         angle=0.0,
+        linearVelocity=config.START_VELOCITY,
         fixtures=fixtureDef(
             shape=polygonShape(vertices=[(x , y) for x, y in config.LANDER_POLY]),
             density=5.0,
