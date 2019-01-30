@@ -7,7 +7,7 @@ class ContactDetector(contactListener):
         self.env = env
 
     def BeginContact(self, contact):
-        if self.env.lander == contact.fixtureA.body or self.env.lander == contact.fixtureB.body:
+        if self.env.agent.body == contact.fixtureA.body or self.env.agent.body == contact.fixtureB.body:
             self.env.game_over = True
         for i in range(2):
             if self.env.legs[i] in [contact.fixtureA.body, contact.fixtureB.body]:

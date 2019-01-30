@@ -1,4 +1,4 @@
-from lunarlander import (LunarLander)
+from padenv import (PadEnv)
 import numpy as np
 import sys
 # Rocket trajectory optimization is a classic topic in Optimal Control.
@@ -91,7 +91,7 @@ def test_lander(env, seed=None, render=False):
     steps = 0
     s = env.reset()
     while True:
-        s = env.step(2)
+        s = env.step(1)
 
         if render:
             still_open = env.render()
@@ -111,10 +111,10 @@ if __name__ == '__main__':
             
             if op.lower() == "debug":
                 if setting:
-                    test_lander(LunarLander(), render=True)
+                    test_lander(PadEnv(), render=True)
                 else:
-                    demo_heuristic_lander(LunarLander(), render=True)
+                    demo_heuristic_lander(PadEnv(), render=True)
 
     else:
-        demo_heuristic_lander(LunarLander(), render=True)
+        demo_heuristic_lander(PadEnv(), render=True)
 

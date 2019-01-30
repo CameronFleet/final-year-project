@@ -1,6 +1,7 @@
 import sys, math
 
 import builder  
+from boosteragent import BoosterAgent
 
 import Box2D
 from Box2D.b2 import circleShape
@@ -15,7 +16,7 @@ from gym.utils import seeding, EzPickle
 import config 
 import time
 
-class LunarLander(gym.Env, EzPickle):
+class PadEnv(gym.Env, EzPickle):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': config.FPS
@@ -30,7 +31,7 @@ class LunarLander(gym.Env, EzPickle):
         
         self.world = Box2D.b2World()
         self.terrian = None
-        self.lander = None
+        self.agent = None
         self.particles = []
 
         self.prev_reward = None
@@ -38,14 +39,7 @@ class LunarLander(gym.Env, EzPickle):
         # useful range is -1 .. +1, but spikes can be higher
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(8,), dtype=np.float32)
 
-        if self.continuous:
-            # Action is two floats [main engine, left-right engines].
-            # Main engine: -1..0 off, 0..+1 throttle from 50% to 100% power. Engine can't work with less than 50% power.
-            # Left-right:  -1.0..-0.5 fire left engine, +0.5..+1.0 fire right engine, -0.5..0.5 off
-            self.action_space = spaces.Box(-1, +1, (2,), dtype=np.float32)
-        else:
-            # Nop, fire left engine, main engine, right engine
-            self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(4)
 
         self.reset()
 
@@ -59,8 +53,8 @@ class LunarLander(gym.Env, EzPickle):
         self._clean_particles(True)
         self.world.DestroyBody(self.terrian)
         self.terrian = None
-        self.world.DestroyBody(self.lander)
-        self.lander = None
+        self.world.DestroyBody(self.agent.body)
+        self.agent = None
         self.world.DestroyBody(self.legs[0])
         self.world.DestroyBody(self.legs[1])
 
@@ -75,7 +69,6 @@ class LunarLander(gym.Env, EzPickle):
         H = config.WORLD_H
 
         # GENERATE TERRIAN
-        CHUNKS = 10
         self.terrian, self.pad = builder.generate_terrian(self.world, W, H)
 
         # GENERATE HELIPAD POLES
@@ -83,13 +76,13 @@ class LunarLander(gym.Env, EzPickle):
         self.helipad_x2 = W/2 + config.GOAL_W/2
         self.helipad_y = H/4 + config.GOAL_H
 
-        # GENERATE LANDER
-        self.lander = builder.generate_booster(self.world, W, H, self.np_random)
+        # GENERATE AGENT
+        self.agent = BoosterAgent(self.world, W, H, self.np_random)
 
         # GENERATE LEGS
-        self.legs = builder.generate_landing_legs(self.world, W, H, self.lander)
+        self.legs = builder.generate_landing_legs(self.world, W, H, self.agent.body)
 
-        self.drawlist = [self.lander, self.terrian, self.pad] + self.legs
+        self.drawlist = [self.agent.body, self.terrian, self.pad] + self.legs
 
         return self.step(np.array([0, 0]) if self.continuous else 0)[0]
 
@@ -107,53 +100,30 @@ class LunarLander(gym.Env, EzPickle):
             self.world.DestroyBody(self.particles.pop(0))
 
     # One step in the envrionment
-    # Equal to 1/FPS 
+    # Equal to 1/FPS time step
     def step(self, action):
-
-        # Engines
-        tip = (math.sin(self.lander.angle), math.cos(self.lander.angle))
-        side = (-tip[1], tip[0])
-        dispersion = [self.np_random.uniform(-1.0, +1.0) for _ in range(2)]
 
         # Main engine
         if action == 2:
-            m_power = 1.0
-            ox = tip[0] * (10 + 2 * dispersion[0]) + side[0] * dispersion[1]  # 4 is move a bit downwards, +-2 for randomness
-            oy = -tip[1] * (3 + 2 * dispersion[0]) - side[1] * dispersion[1]
-            impulse_pos = (self.lander.position[0] + ox, self.lander.position[1] + oy)
-            p = self._create_particle(3.5, impulse_pos[0], impulse_pos[1], m_power)  # particles are just a decoration, 3.5 is here to make particle speed adequate
-            p.ApplyLinearImpulse((ox * config.MAIN_ENGINE_POWER * m_power, oy * config.MAIN_ENGINE_POWER * m_power), impulse_pos,True)
-
-            self.lander.ApplyLinearImpulse((-ox * config.MAIN_ENGINE_POWER * m_power, -oy * config.MAIN_ENGINE_POWER * m_power),
-                                            impulse_pos, True)
+            self.agent.fireMainEngine(1.0, self._create_particle)
 
         # Orientation engines
         if action == 1 or action == 3:
-            direction = action - 2
-            s_power = 1.0
-            ox = tip[0] * dispersion[0] + side[0] * (3 * dispersion[1] + direction * config.SIDE_ENGINE_AWAY )
-            oy = -tip[1] * dispersion[0] - side[1] * (3 * dispersion[1] + direction * config.SIDE_ENGINE_AWAY )
-            impulse_pos = (self.lander.position[0] + ox - tip[0] * 17 ,
-                            self.lander.position[1] + oy + tip[1] * config.SIDE_ENGINE_HEIGHT)
-            p = self._create_particle(0.7, impulse_pos[0], impulse_pos[1], s_power)
-            p.ApplyLinearImpulse((ox * config.SIDE_ENGINE_POWER * s_power, oy * config.SIDE_ENGINE_POWER * s_power), impulse_pos,
-                                    True)
-            self.lander.ApplyLinearImpulse((-ox * config.SIDE_ENGINE_POWER * s_power, -oy * config.SIDE_ENGINE_POWER * s_power),
-                                            impulse_pos, True)
+            self.agent.fireSideEngine(1.0, action - 2, self._create_particle)
 
         # Step a reasonable amount in Box2D
         self.world.Step(1.0 / config.FPS, 6, 2)
 
         # Update state
-        pos = self.lander.position
-        vel = self.lander.linearVelocity
+        pos = self.agent.body.position
+        vel = self.agent.body.linearVelocity
         state = [
             (pos.x - config.VIEWPORT_W / 2) / (config.VIEWPORT_W/ 2),
             (pos.y - (self.helipad_y + config.LEG_DOWN )) / (config.VIEWPORT_H / 2),
             vel.x * (config.VIEWPORT_W / 2) / config.FPS,
             vel.y * (config.VIEWPORT_H / 2) / config.FPS,
-            self.lander.angle,
-            20.0 * self.lander.angularVelocity / config.FPS,
+            self.agent.body.angle,
+            20.0 * self.agent.body.angularVelocity / config.FPS,
             1.0 if self.legs[0].ground_contact else 0.0,
             1.0 if self.legs[1].ground_contact else 0.0
         ]
@@ -178,7 +148,7 @@ class LunarLander(gym.Env, EzPickle):
         if self.game_over or abs(state[0]) >= 1.0:
             done = True
             reward = -100
-        if not self.lander.awake:
+        if not self.agent.body.awake:
             done = True
             reward = +100
         return np.array(state, dtype=np.float32), reward, done, {}
@@ -199,8 +169,8 @@ class LunarLander(gym.Env, EzPickle):
                 print('A key was pressed')
 
         self.viewer.draw_fps()
-        self.viewer.draw_metric("V_i", self.lander.linearVelocity[0])
-        self.viewer.draw_metric("V_j", self.lander.linearVelocity[1])
+        self.viewer.draw_metric("V_i", self.agent.body.linearVelocity[0])
+        self.viewer.draw_metric("V_j", self.agent.body.linearVelocity[1])
 
         # Degrade exhaust
         for obj in self.particles:

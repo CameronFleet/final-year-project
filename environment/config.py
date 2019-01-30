@@ -1,8 +1,8 @@
 FPS = 60
 SCALE = 30.0  # affects how fast-paced the game is, forces should be adjusted as well
 
-MAIN_ENGINE_POWER = 40
-SIDE_ENGINE_POWER = 5
+MAIN_ENGINE_POWER = 0
+SIDE_ENGINE_POWER = 0
 
 # (px)
 VIEWPORT_W = 1300
