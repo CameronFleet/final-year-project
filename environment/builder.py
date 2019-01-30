@@ -44,7 +44,7 @@ def generate_booster(world, W, H, np_random):
             restitution=0.0)  # 0.99 bouncy
     )
 
-    booster.color1 = (0.4, 0.4, 0.4)
+    booster.color1 = (1, 1, 1)
     booster.color2 = (0.4, 0.4, 0.4)
     booster.ApplyForceToCenter((
         np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM),
@@ -68,7 +68,7 @@ def generate_landing_legs(world, W, H, booster):
                 maskBits=0x001)
         )
         leg.ground_contact = False
-        leg.color1 = (0.35, 0.35, 0.35)
+        leg.color1 = (1, 1, 1)
         leg.color2 = (0.35, 0.35, 0.35)
         rjd = revoluteJointDef(
             bodyA=booster,
@@ -97,7 +97,7 @@ def generate_particle(world, x, y, mass):
             position=(x, y),
             angle=0.0,
             fixtures=fixtureDef(
-                shape=circleShape(radius=2, pos=(0, 0)),
+                shape=circleShape(radius=0.5, pos=(0, 0)),
                 density=mass,
                 friction=0.1,
                 categoryBits=0x0100,

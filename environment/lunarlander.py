@@ -116,28 +116,30 @@ class LunarLander(gym.Env, EzPickle):
         dispersion = [self.np_random.uniform(-1.0, +1.0) for _ in range(2)]
 
         # Main engine
-        m_power = 1.0
-        ox = tip[0] * (10 + 2 * dispersion[0]) + side[0] * dispersion[1]  # 4 is move a bit downwards, +-2 for randomness
-        oy = -tip[1] * (10 + 2 * dispersion[0]) - side[1] * dispersion[1]
-        impulse_pos = (self.lander.position[0] + ox, self.lander.position[1] + oy)
-        p = self._create_particle(3.5, impulse_pos[0], impulse_pos[1], m_power)  # particles are just a decoration, 3.5 is here to make particle speed adequate
-        p.ApplyLinearImpulse((ox * config.MAIN_ENGINE_POWER * m_power, oy * config.MAIN_ENGINE_POWER * m_power), impulse_pos,True)
+        if action == 2:
+            m_power = 1.0
+            ox = tip[0] * (10 + 2 * dispersion[0]) + side[0] * dispersion[1]  # 4 is move a bit downwards, +-2 for randomness
+            oy = -tip[1] * (3 + 2 * dispersion[0]) - side[1] * dispersion[1]
+            impulse_pos = (self.lander.position[0] + ox, self.lander.position[1] + oy)
+            p = self._create_particle(3.5, impulse_pos[0], impulse_pos[1], m_power)  # particles are just a decoration, 3.5 is here to make particle speed adequate
+            p.ApplyLinearImpulse((ox * config.MAIN_ENGINE_POWER * m_power, oy * config.MAIN_ENGINE_POWER * m_power), impulse_pos,True)
 
-        self.lander.ApplyLinearImpulse((-ox * config.MAIN_ENGINE_POWER * m_power, -oy * config.MAIN_ENGINE_POWER * m_power),
-                                        impulse_pos, True)
+            self.lander.ApplyLinearImpulse((-ox * config.MAIN_ENGINE_POWER * m_power, -oy * config.MAIN_ENGINE_POWER * m_power),
+                                            impulse_pos, True)
 
         # Orientation engines
-        direction = action - 2
-        s_power = 1.0
-        ox = tip[0] * dispersion[0] + side[0] * (3 * dispersion[1] + direction * config.SIDE_ENGINE_AWAY )
-        oy = -tip[1] * dispersion[0] - side[1] * (3 * dispersion[1] + direction * config.SIDE_ENGINE_AWAY )
-        impulse_pos = (self.lander.position[0] + ox - tip[0] * 17 ,
-                        self.lander.position[1] + oy + tip[1] * config.SIDE_ENGINE_HEIGHT)
-        p = self._create_particle(0.7, impulse_pos[0], impulse_pos[1], s_power)
-        p.ApplyLinearImpulse((ox * config.SIDE_ENGINE_POWER * s_power, oy * config.SIDE_ENGINE_POWER * s_power), impulse_pos,
-                                True)
-        self.lander.ApplyLinearImpulse((-ox * config.SIDE_ENGINE_POWER * s_power, -oy * config.SIDE_ENGINE_POWER * s_power),
-                                        impulse_pos, True)
+        if action == 1 or action == 3:
+            direction = action - 2
+            s_power = 1.0
+            ox = tip[0] * dispersion[0] + side[0] * (3 * dispersion[1] + direction * config.SIDE_ENGINE_AWAY )
+            oy = -tip[1] * dispersion[0] - side[1] * (3 * dispersion[1] + direction * config.SIDE_ENGINE_AWAY )
+            impulse_pos = (self.lander.position[0] + ox - tip[0] * 17 ,
+                            self.lander.position[1] + oy + tip[1] * config.SIDE_ENGINE_HEIGHT)
+            p = self._create_particle(0.7, impulse_pos[0], impulse_pos[1], s_power)
+            p.ApplyLinearImpulse((ox * config.SIDE_ENGINE_POWER * s_power, oy * config.SIDE_ENGINE_POWER * s_power), impulse_pos,
+                                    True)
+            self.lander.ApplyLinearImpulse((-ox * config.SIDE_ENGINE_POWER * s_power, -oy * config.SIDE_ENGINE_POWER * s_power),
+                                            impulse_pos, True)
 
         # Step a reasonable amount in Box2D
         self.world.Step(1.0 / config.FPS, 6, 2)
@@ -168,8 +170,8 @@ class LunarLander(gym.Env, EzPickle):
             reward = shaping - self.prev_shaping
         self.prev_shaping = shaping
 
-        reward -= m_power * 0.30  # less fuel spent is better, about -30 for heurisic landing
-        reward -= s_power * 0.03
+        # reward -= m_power * 0.30  # less fuel spent is better, about -30 for heurisic landing
+        # reward -= s_power * 0.03
 
         # See if state is done
         done = False
