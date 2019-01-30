@@ -1,7 +1,7 @@
 FPS = 60
 SCALE = 30.0  # affects how fast-paced the game is, forces should be adjusted as well
 
-MAIN_ENGINE_POWER = 100
+MAIN_ENGINE_POWER = 4
 SIDE_ENGINE_POWER = 0
 
 # (px)
@@ -9,23 +9,23 @@ VIEWPORT_W = 1300
 VIEWPORT_H = 800
 
 # (m)
-WORLD_SCALAR = 3
+WORLD_SCALAR = 0.7
 WORLD_W = VIEWPORT_W * WORLD_SCALAR
 WORLD_H = VIEWPORT_H * WORLD_SCALAR
 
 # (m)
-GOAL_H = 30
-GOAL_W = 500
+GOAL_H = 5
+GOAL_W = 100
 
 # (m)
 LANDER_POLY = [
-    (-10, +190), (-10, 0), 
-    (+10, +190), (+10, 0),
+    (-1.5, +40), (-1.5, 0), 
+    (+1.5, +40), (+1.5, 0),
 ]
 # (m)
-LEG_AWAY = 20
-LEG_DOWN = 15
-LEG_W, LEG_H = 4, 24
+LEG_AWAY = 4
+LEG_DOWN = 4
+LEG_W, LEG_H = 1, 5
 LEG_SPRING_TORQUE = 40
 
 # (m/s)

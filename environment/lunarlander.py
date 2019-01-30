@@ -227,9 +227,9 @@ class LunarLander(gym.Env, EzPickle):
 
         # Render helipad falgs
         for x in [self.helipad_x1, self.helipad_x2]:
-            flagy1 = self.helipad_y + 1 
-            flagy2 = flagy1 - 31 
-            self.viewer.draw_polygon([(x-1, flagy2), (x-1, flagy1), (x + 20, flagy1), (x + 20, flagy2)],
+            flagy1 = self.helipad_y +3
+            flagy2 = self.helipad_y - config.GOAL_H - 1
+            self.viewer.draw_polygon([(x-1, flagy2), (x-1, flagy1), (x + config.GOAL_W/10, flagy1), (x + config.GOAL_W/10, flagy2)],
                                      color=(0.8, 0.8, 0))
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
