@@ -1,19 +1,19 @@
 import sys, math
 
-import builder  
-from boosteragent import BoosterAgent
+import environment.builder as builder
+from environment.boosteragent import BoosterAgent
 
 import Box2D
 from Box2D.b2 import circleShape
 
-from detector import ContactDetector
+from environment.detector import ContactDetector
 import numpy as np
 
 import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
 
-import config 
+import config
 import time
 
 class PadEnv(gym.Env, EzPickle):
@@ -22,12 +22,11 @@ class PadEnv(gym.Env, EzPickle):
         'video.frames_per_second': config.FPS
     }
 
-    continuous = False
-
-    def __init__(self):
+    def __init__(self, continuous):
         EzPickle.__init__(self)
         self.seed()
         self.viewer = None
+        self.continuous = continuous
         
         self.world = Box2D.b2World()
         self.terrian = None
@@ -35,11 +34,18 @@ class PadEnv(gym.Env, EzPickle):
         self.particles = []
 
         self.prev_reward = None
+        self.user_action = None
+
+        self.done = False
+
+        self.lastFx = 0
+        self.lastFy = 0
 
         # useful range is -1 .. +1, but spikes can be higher
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(8,), dtype=np.float32)
-
         self.action_space = spaces.Discrete(4)
+
+        self.GOAL = [config.WORLD_W*config.GOAL_X_SCALED, config.SEA_LEVEL + config.GOAL_H]
 
         self.reset()
 
@@ -72,9 +78,9 @@ class PadEnv(gym.Env, EzPickle):
         self.terrian, self.pad = builder.generate_terrian(self.world, W, H)
 
         # GENERATE HELIPAD POLES
-        self.helipad_x1 = W/2 - config.GOAL_W/2
-        self.helipad_x2 = W/2 + config.GOAL_W/2
-        self.helipad_y = H/4 + config.GOAL_H
+        self.helipad_x1 = W*config.GOAL_X_SCALED - config.GOAL_W/2
+        self.helipad_x2 = W*config.GOAL_X_SCALED + config.GOAL_W/2
+        self.helipad_y = config.SEA_LEVEL + config.GOAL_H
 
         # GENERATE AGENT
         self.agent = BoosterAgent(self.world, W, H, self.np_random)
@@ -84,7 +90,7 @@ class PadEnv(gym.Env, EzPickle):
 
         self.drawlist = [self.agent.body, self.terrian, self.pad] + self.legs
 
-        return self.step(np.array([0, 0]) if self.continuous else 0)[0]
+        return self.step([])
 
     # Exhaust create
     def _create_particle(self, mass, x, y, ttl):
@@ -99,17 +105,36 @@ class PadEnv(gym.Env, EzPickle):
         while self.particles and (all or self.particles[0].ttl < 0):
             self.world.DestroyBody(self.particles.pop(0))
 
+    def _record_metrics(self, fx, fy):
+        self.lastFx = fx
+        self.lastFy = fy
+
     # One step in the envrionment
     # Equal to 1/FPS time step
-    def step(self, action):
+    def step(self, actions):
+
+        if self.user_action is not None:
+            actions = [self.user_action]
 
         # Main engine
-        if action == 2:
-            self.agent.fireMainEngine(1.0, self._create_particle)
+        if self.continuous:
+            if len(actions) == 3:
+                Ft, alpha, Fs = actions
+                if Ft:
+                    self.agent.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
+                if Fs:
+                    self.agent.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
+        else: 
+            # Main engine
+            if 2 in actions:
+                self.agent.fireMainEngine(1.0, 0, self._create_particle)
 
-        # Orientation engines
-        if action == 1 or action == 3:
-            self.agent.fireSideEngine(1.0, action - 2, self._create_particle)
+            # Side engines
+            if 1 in actions:
+                self.agent.fireSideEngine(1.0, -1, self._create_particle)
+            elif 3 in actions:
+                self.agent.fireSideEngine(1.0, 1, self._create_particle)
+
 
         # Step a reasonable amount in Box2D
         self.world.Step(1.0 / config.FPS, 6, 2)
@@ -118,46 +143,42 @@ class PadEnv(gym.Env, EzPickle):
         pos = self.agent.body.position
         vel = self.agent.body.linearVelocity
         state = [
-            (pos.x - config.VIEWPORT_W / 2) / (config.VIEWPORT_W/ 2),
-            (pos.y - (self.helipad_y + config.LEG_DOWN )) / (config.VIEWPORT_H / 2),
-            vel.x * (config.VIEWPORT_W / 2) / config.FPS,
-            vel.y * (config.VIEWPORT_H / 2) / config.FPS,
+            pos.x,
+            pos.y,
+            vel.x,
+            vel.y,
             self.agent.body.angle,
-            20.0 * self.agent.body.angularVelocity / config.FPS,
+            self.agent.body.angularVelocity,
+            0,
             1.0 if self.legs[0].ground_contact else 0.0,
             1.0 if self.legs[1].ground_contact else 0.0
         ]
-        assert len(state) == 8
+        assert len(state) == 9
 
         # Calculate reward
+        x, y, vx, vy, theta, vtheta, alpha, l1, l2 = state
         reward = 0
-        shaping = \
-            - 100 * np.sqrt(state[0] * state[0] + state[1] * state[1]) \
-            - 100 * np.sqrt(state[2] * state[2] + state[3] * state[3]) \
-            - 100 * abs(state[4]) + 10 * state[6] + 10 * state[7]  # And ten points for legs contact, the idea is if you
-        # lose contact again after landing, you get negative reward
-        if self.prev_shaping is not None:
-            reward = shaping - self.prev_shaping
-        self.prev_shaping = shaping
 
-        # reward -= m_power * 0.30  # less fuel spent is better, about -30 for heurisic landing
-        # reward -= s_power * 0.03
-
+    
         # See if state is done
         done = False
-        if self.game_over or abs(state[0]) >= 1.0:
+        if self.game_over:
             done = True
             reward = -100
         if not self.agent.body.awake:
             done = True
             reward = +100
+        if self.done: 
+            done = True
+
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):
     
         # (l,b), (l,t), (r,t), (r,b)
-        import rendering
+        import environment.rendering as rendering
         import pyglet
+        from pyglet.window import key
 
         # Create Viewer 
         if self.viewer is None:
@@ -166,17 +187,41 @@ class PadEnv(gym.Env, EzPickle):
 
             @self.viewer.window.event
             def on_key_press(symbol, modifiers):
-                print('A key was pressed')
+                if symbol == key.UP:
+                    self.user_action = 2
+                if symbol == key.LEFT: 
+                    self.user_action = 1
+                if symbol == key.RIGHT:
+                    self.user_action = 3
+                if symbol == key.Q:
+                    self.viewer.close()
+                    self.done = True
+                if symbol == key.R:
+                    self.reset()
+
+            @self.viewer.window.event
+            def on_key_release(symbol, modifiers):
+                self.user_action = None
+                    
 
         self.viewer.draw_fps()
         self.viewer.draw_metric("V_i", self.agent.body.linearVelocity[0])
         self.viewer.draw_metric("V_j", self.agent.body.linearVelocity[1])
+        self.viewer.draw_metric("Angle", self.agent.body.angle)
+        self.viewer.draw_metric("Fx", self.lastFx)
+        self.viewer.draw_metric("Fy", self.lastFy)
+
+
+
 
         # Degrade exhaust
         for obj in self.particles:
             obj.ttl -= 0.05
             obj.color1 = (max(0.2, 0.2 + obj.ttl), max(0.2, 0.5 * obj.ttl), max(0.2, 0.5 * obj.ttl))
             obj.color2 = (max(0.2, 0.2 + obj.ttl), max(0.2, 0.5 * obj.ttl), max(0.2, 0.5 * obj.ttl))
+            if obj.coldGas:
+                obj.color1 = (max(0.2, 0.3 + obj.ttl), max(0.2, 0.3 + obj.ttl), max(0.2, 0.7 + obj.ttl))
+                obj.color2 = (max(0.2, 0.3 + obj.ttl), max(0.2, 0.3 + obj.ttl), max(0.2, 0.7 + obj.ttl))
         self._clean_particles(False)
 
         # Render Sky
@@ -203,6 +248,12 @@ class PadEnv(gym.Env, EzPickle):
             flagy2 = self.helipad_y - config.GOAL_H - 1
             self.viewer.draw_polygon([(x-1, flagy2), (x-1, flagy1), (x + config.GOAL_W/10, flagy1), (x + config.GOAL_W/10, flagy2)],
                                      color=(0.8, 0.8, 0))
+                                    
+
+        # Position Indicator               
+        # x,y = self.agent.body.position
+        # s = 1
+        # self.viewer.draw_polygon([(x-s,y-s),(x-s,y+s), (x+s, y+s), (x+s, y-s)], color=(0, 0, 0))        
 
         return self.viewer.render(return_rgb_array=mode == 'rgb_array')
 

@@ -4,16 +4,15 @@ from Box2D.b2 import (circleShape, edgeShape, fixtureDef, polygonShape,
 
 import config
 
-initial_y = config.VIEWPORT_H / config.SCALE
-
+sea_level = config.SEA_LEVEL
 
 def generate_terrian(world, W, H):
 
-    g_x1, g_x2, g_y = W/2 - (config.GOAL_W/2), W/2 + (config.GOAL_W/2), H/4 + config.GOAL_H
+    g_x1, g_x2, g_y = W*config.GOAL_X_SCALED  - (config.GOAL_W/2), W*config.GOAL_X_SCALED + (config.GOAL_W/2), sea_level + config.GOAL_H
 
     pad = world.CreateStaticBody(
     position=(0,0),
-    shapes=polygonShape(vertices=[(g_x1, H/4),(g_x1, g_y), (g_x2, g_y), [g_x2, H/4]])
+    shapes=polygonShape(vertices=[(g_x1, sea_level),(g_x1, g_y), (g_x2, g_y), [g_x2, sea_level]])
     )
 
     pad.color1 = (0.4,0.4,0.4)
@@ -21,7 +20,7 @@ def generate_terrian(world, W, H):
 
     terrian = world.CreateStaticBody(
     position=(0,0),
-    shapes=polygonShape(vertices=[(0, 0),(0, H/4), (W, H/4), [W, 0]]),
+    shapes=polygonShape(vertices=[(0, 0),(0, sea_level), (W, sea_level), [W, 0]]),
     )
 
 
@@ -32,12 +31,12 @@ def generate_terrian(world, W, H):
 
 def generate_booster(world, W, H, np_random): 
     booster = world.CreateDynamicBody(
-        position=(W/2, 3*H/4),
-        angle=0.0,
+        position=(W/2, H-60),
+        angle=0,
         linearVelocity=config.START_VELOCITY,
         fixtures=fixtureDef(
             shape=polygonShape(vertices=[(x , y) for x, y in config.LANDER_POLY]),
-            density=5.0,
+            density=100.0,
             friction=0.1,
             categoryBits=0x0010,
             maskBits=0x001,  # collide only with ground
@@ -58,7 +57,7 @@ def generate_landing_legs(world, W, H, booster):
     legs = []
     for i in [-1, +1]:
         leg = world.CreateDynamicBody(
-            position=(W/2- i * config.LEG_AWAY, 3*H/4),
+            position=(W/2- i * config.LEG_AWAY, H-60),
             angle=(i * 0.05),
             fixtures=fixtureDef(
                 shape=polygonShape(box=(config.LEG_W, config.LEG_H )),
