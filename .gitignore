@@ -5,5 +5,7 @@ CAA/.idea/*
 CAA/cmake-build-debug/
 __pycache__/
 algorithms/__pycache__/*
+algorithms/__pycache__/
 environment/__pycache__/
 episodes/*
+episodes.log

@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 import config
-from environment.padenv import PadEnv
+from environment.environment import Env
 from algorithms.pid_alg import PIDAlg
 import time
 
@@ -41,7 +41,7 @@ def _record_episode():
     return episode_number
 
 if __name__ == '__main__':
-    env = PadEnv(True)
+    env = Env(True)
     episode_number = _record_episode()
     alg = PIDAlg(1/config.FPS, env.seed, episode_number)
     test_lander(env, alg, render=True)

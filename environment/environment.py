@@ -16,7 +16,7 @@ from gym.utils import seeding, EzPickle
 import config
 import time
 
-class PadEnv(gym.Env, EzPickle):
+class Env(gym.Env, EzPickle):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': config.FPS
@@ -41,7 +41,6 @@ class PadEnv(gym.Env, EzPickle):
 
         self.np_random, self.seed = seeding.np_random(seed)
         
-        # useful range is -1 .. +1, but spikes can be higher
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(8,), dtype=np.float32)
         self.action_space = spaces.Discrete(4)
 
@@ -88,7 +87,6 @@ class PadEnv(gym.Env, EzPickle):
 
         return self.step([])
 
-    # Exhaust create
     def _create_particle(self, mass, x, y, ttl):
         p = builder.generate_particle(self.world, x, y, mass)
         p.ttl = ttl
@@ -96,12 +94,10 @@ class PadEnv(gym.Env, EzPickle):
         self._clean_particles(False)
         return p
 
-    # Exhaust delete
     def _clean_particles(self, all):
         while self.particles and (all or self.particles[0].ttl < 0):
             self.world.DestroyBody(self.particles.pop(0))
 
-    # Apply Drag Force
     def _apply_drag(self, body):
         vel = body.linearVelocity
         cog = body.worldCenter
@@ -116,13 +112,10 @@ class PadEnv(gym.Env, EzPickle):
         self._record_metrics({"dragForce.x": dragForce[0], "dragForce.y": dragForce[1]})
 
 
-    # {"metric1":33, "metric2":44}
     def _record_metrics(self, metrics):
         for metric in metrics.keys():
             self.tracked_metrics[metric] = metrics[metric]
 
-    # One step in the envrionment
-    # Equal to 1/FPS time step
     def step(self, actions):
 
         if self.user_action is not None:
@@ -136,20 +129,16 @@ class PadEnv(gym.Env, EzPickle):
                 if Fs:
                     self.agent.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
         else: 
-            # Main engine
             if 2 in actions:
                 self.agent.fireMainEngine(1.0, 0, self._create_particle)
 
-            # Side engines
             if 1 in actions:
                 self.agent.fireSideEngine(1.0, -1, self._create_particle)
             elif 3 in actions:
                 self.agent.fireSideEngine(1.0, 1, self._create_particle)
 
-        # Apply drag
         self._apply_drag(self.agent.body)
 
-        # Step a reasonable amount in Box2D
         self.world.Step(1.0 / config.FPS, 6, 2)
 
         # Update state
@@ -187,8 +176,6 @@ class PadEnv(gym.Env, EzPickle):
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):
-    
-        # (l,b), (l,t), (r,t), (r,b)
         import environment.rendering as rendering
         import pyglet
         from pyglet.window import key
@@ -216,6 +203,7 @@ class PadEnv(gym.Env, EzPickle):
             def on_key_release(symbol, modifiers):
                 self.user_action = None 
 
+        # Draw metrics
         self.viewer.draw_fps()
         self.viewer.draw_metric("V_i", self.agent.body.linearVelocity[0])
         self.viewer.draw_metric("V_j", self.agent.body.linearVelocity[1])
