@@ -36,7 +36,7 @@ def generate_booster(world, W, H, np_random):
         linearVelocity=config.START_VELOCITY,
         fixtures=fixtureDef(
             shape=polygonShape(vertices=[(x , y) for x, y in config.LANDER_POLY]),
-            density=100.0,
+            density=config.LANDER_DENSITY,
             friction=0.1,
             categoryBits=0x0010,
             maskBits=0x001,  # collide only with ground

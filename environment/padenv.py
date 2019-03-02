@@ -22,9 +22,8 @@ class PadEnv(gym.Env, EzPickle):
         'video.frames_per_second': config.FPS
     }
 
-    def __init__(self, continuous):
+    def __init__(self, continuous, seed=None):
         EzPickle.__init__(self)
-        self.seed()
         self.viewer = None
         self.continuous = continuous
         
@@ -38,9 +37,10 @@ class PadEnv(gym.Env, EzPickle):
 
         self.done = False
 
-        self.lastFx = 0
-        self.lastFy = 0
+        self.tracked_metrics = {}
 
+        self.np_random, self.seed = seeding.np_random(seed)
+        
         # useful range is -1 .. +1, but spikes can be higher
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(8,), dtype=np.float32)
         self.action_space = spaces.Discrete(4)
@@ -48,10 +48,6 @@ class PadEnv(gym.Env, EzPickle):
         self.GOAL = [config.WORLD_W*config.GOAL_X_SCALED, config.SEA_LEVEL + config.GOAL_H]
 
         self.reset()
-
-    def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
 
     def _destroy(self):
         if not self.terrian: return
@@ -105,9 +101,25 @@ class PadEnv(gym.Env, EzPickle):
         while self.particles and (all or self.particles[0].ttl < 0):
             self.world.DestroyBody(self.particles.pop(0))
 
-    def _record_metrics(self, fx, fy):
-        self.lastFx = fx
-        self.lastFy = fy
+    # Apply Drag Force
+    def _apply_drag(self, body):
+        vel = body.linearVelocity
+        cog = body.worldCenter
+        dragConstant = 0.75
+        Ay = config.LANDER_DIAMETER * (abs(config.LANDER_DIAMETER*math.cos(body.angle)) 
+                                     + abs(config.LANDER_HEIGHT*math.sin(body.angle)))
+        Ax = config.LANDER_DIAMETER * (abs(config.LANDER_DIAMETER*math.sin(body.angle)) 
+                                     + abs(config.LANDER_HEIGHT*math.cos(body.angle)))
+
+        dragForce = (dragConstant*config.SEA_LEVEL_DENSITY*vel.x*vel.x*Ax) / 2, (dragConstant*config.SEA_LEVEL_DENSITY*vel.y*vel.y*Ay) / 2
+        body.ApplyForce((dragForce[0], dragForce[1]), (cog.x, cog.y), False)
+        self._record_metrics({"dragForce.x": dragForce[0], "dragForce.y": dragForce[1]})
+
+
+    # {"metric1":33, "metric2":44}
+    def _record_metrics(self, metrics):
+        for metric in metrics.keys():
+            self.tracked_metrics[metric] = metrics[metric]
 
     # One step in the envrionment
     # Equal to 1/FPS time step
@@ -116,7 +128,6 @@ class PadEnv(gym.Env, EzPickle):
         if self.user_action is not None:
             actions = [self.user_action]
 
-        # Main engine
         if self.continuous:
             if len(actions) == 3:
                 Ft, alpha, Fs = actions
@@ -135,6 +146,8 @@ class PadEnv(gym.Env, EzPickle):
             elif 3 in actions:
                 self.agent.fireSideEngine(1.0, 1, self._create_particle)
 
+        # Apply drag
+        self._apply_drag(self.agent.body)
 
         # Step a reasonable amount in Box2D
         self.world.Step(1.0 / config.FPS, 6, 2)
@@ -142,6 +155,7 @@ class PadEnv(gym.Env, EzPickle):
         # Update state
         pos = self.agent.body.position
         vel = self.agent.body.linearVelocity
+
         state = [
             pos.x,
             pos.y,
@@ -159,7 +173,6 @@ class PadEnv(gym.Env, EzPickle):
         x, y, vx, vy, theta, vtheta, alpha, l1, l2 = state
         reward = 0
 
-    
         # See if state is done
         done = False
         if self.game_over:
@@ -201,18 +214,14 @@ class PadEnv(gym.Env, EzPickle):
 
             @self.viewer.window.event
             def on_key_release(symbol, modifiers):
-                self.user_action = None
-                    
+                self.user_action = None 
 
         self.viewer.draw_fps()
         self.viewer.draw_metric("V_i", self.agent.body.linearVelocity[0])
         self.viewer.draw_metric("V_j", self.agent.body.linearVelocity[1])
         self.viewer.draw_metric("Angle", self.agent.body.angle)
-        self.viewer.draw_metric("Fx", self.lastFx)
-        self.viewer.draw_metric("Fy", self.lastFy)
-
-
-
+        for metric in self.tracked_metrics:
+            self.viewer.draw_metric(metric, self.tracked_metrics[metric])
 
         # Degrade exhaust
         for obj in self.particles:
