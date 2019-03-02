@@ -52,7 +52,6 @@ def generate_booster(world, W, H, np_random):
 
     return booster
 
-
 def generate_landing_legs(world, W, H, booster):
     legs = []
     for i in [-1, +1]:
@@ -89,7 +88,6 @@ def generate_landing_legs(world, W, H, booster):
         legs.append(leg)
 
     return legs
-
 
 def generate_particle(world, x, y, mass):
     p = world.CreateDynamicBody(

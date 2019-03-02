@@ -9,7 +9,6 @@ class BoosterAgent:
         self.MAIN_ENGINE_POWER = config.MAIN_ENGINE_POWER * 1/config.FPS
         self.SIDE_ENGINE_POWER = config.SIDE_ENGINE_POWER * 1/config.FPS
 
-    # Actions
     def fireMainEngine(self, m_power, alpha, create_particle, record_metrics):
 
         dispersion = self.np_random.uniform(-0.1, +0.1)
@@ -29,7 +28,6 @@ class BoosterAgent:
             p.ApplyLinearImpulse((-Fx, -Fy), impulse_pos,True)
             self.body.ApplyLinearImpulse((Fx, Fy),
                                             impulse_pos, True)
-
 
     def fireSideEngine(self, s_power, direction, create_particle):
 

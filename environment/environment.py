@@ -176,7 +176,7 @@ class Env(gym.Env, EzPickle):
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):
-        import environment.rendering as rendering
+        import util.rendering as rendering
         import pyglet
         from pyglet.window import key
 
