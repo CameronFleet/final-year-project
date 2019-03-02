@@ -3,28 +3,18 @@ import sys
 import config
 from environment.padenv import PadEnv
 from algorithms.pid_alg import PIDAlg
-from logger import log_episode_begin, log_controller_metrics
 import time
 
 def test_lander(env, controller, seed=None, render=False):
-    
+
     actions = []
-    env.seed(seed)
     step = 0 
 
-    log_episode_begin(env)
-
     while True: 
-        # Step through world
         step += 1
-
-        # Plant equation
         s, r, done, _ = env.step(actions)
-
-        # State feedback
         x, y, vx, vy,theta, vtheta, alpha, l1, l2 = s
 
-        # Actions selected for next world step
         actions = controller.go(s, env)
 
         if l1 or l2:
@@ -40,11 +30,21 @@ def test_lander(env, controller, seed=None, render=False):
         if step > 1000:
             break
 
-    controller.report()
+    controller.report(save=True, onlyControl=True)
     return 0
 
+def _record_episode():
+    f = open("episodes.log")
+    episode_number = len(f.readlines())
+    f = open("episodes.log", "a")
+    f.write("EPISODE="+ str(episode_number) + " SEED=" + str(env.seed) + "\n")
+    return episode_number
+
 if __name__ == '__main__':
-    test_lander(PadEnv(True), PIDAlg(1/config.FPS), render=True)
+    env = PadEnv(True)
+    episode_number = _record_episode()
+    alg = PIDAlg(1/config.FPS, env.seed, episode_number)
+    test_lander(env, alg, render=True)
 
 
 

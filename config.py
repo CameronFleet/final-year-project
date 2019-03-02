@@ -1,9 +1,9 @@
+# (Hz) n times per second.
 FPS = 60
-# SCALE = 30.0  # affects how fast-paced the game is, forces should be adjusted as well
 
-# (N) maybe? 
-MAIN_ENGINE_POWER = 5000
-SIDE_ENGINE_POWER = 2000
+# (N/s) 845kN per Engine, 1 Engine Fired - assumed 100kN for side engine thrusters
+MAIN_ENGINE_POWER = 845000
+SIDE_ENGINE_POWER = 100000
 ORIENTATION_ENGINE_POWER = 60
 
 # (px)
@@ -23,24 +23,30 @@ GOAL_H = 5
 GOAL_W = 100
 GOAL_X_SCALED = 0.5
 
-# (m)
+# (m) 3x40
+LANDER_DIAMETER = 3 
+LANDER_HEIGHT   = 40
 LANDER_POLY = [
-    (-1.5, +40), (-1.5, 0), 
-    (+1.5, +40), (+1.5, 0),
+    (-LANDER_DIAMETER/2, +LANDER_HEIGHT), (-LANDER_DIAMETER/2, 0), 
+    (+LANDER_DIAMETER/2, +LANDER_HEIGHT), (+LANDER_DIAMETER/2, 0),
 ]
+
+# (kg/m^3)
+LANDER_DENSITY = 200.0 # equates to 24,000kg dry mass weight
+SEA_LEVEL_DENSITY    = 1.225
+
+# (m) 
+SIDE_ENGINE_HEIGHT = 40
+SIDE_ENGINE_AWAY = 3
+
 # (m)
 LEG_AWAY = 4
 LEG_DOWN = 2
 LEG_W, LEG_H = 0.5, 4
-
 LEG_SPRING_TORQUE = 10
 
 # (m/s)
-START_VELOCITY = (0,0)
+START_VELOCITY = (0,-80)
 
+# Randomness factor
 INITIAL_RANDOM = 1000.0  # Set 1500 to make game harder
-
-SIDE_ENGINE_HEIGHT = 40
-SIDE_ENGINE_AWAY = 3
-
-ORIENTATION_ENGINE_HEIGHT = 40
