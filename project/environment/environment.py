@@ -16,13 +16,39 @@ from gym.utils import seeding, EzPickle
 import project.config as config
 import time
 
+def drag_force(body, air_density, drag_constant):
+    vel = body.linearVelocity
+    cog = body.worldCenter
+    Ay = body.diameter * (abs(body.diameter*math.cos(body.angle)) 
+                                    + abs(body.height*math.sin(body.angle)))
+    Ax = body.diameter * (abs(body.diameter*math.sin(body.angle)) 
+                                    + abs(body.height*math.cos(body.angle)))
+
+    drag = (drag_constant*air_density*vel.x*vel.x*Ax) / 2, (drag_constant*air_density*vel.y*vel.y*Ay) / 2
+    return drag, cog
+
+def episode_complete(agent, env):
+    done = False
+    reward = None
+    if env.game_over:
+        done = True
+        reward = -100
+    if not agent.body.awake:
+        done = True
+        reward = +100
+    if env.done: 
+        done = True
+        reward = 0
+    return done, reward
+
+
 class Env(gym.Env, EzPickle):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': config.FPS
     }
 
-    def __init__(self, continuous, seed=None):
+    def __init__(self, continuous = False, seed=None):
         EzPickle.__init__(self)
         self.viewer = None
         self.continuous = continuous
@@ -99,18 +125,9 @@ class Env(gym.Env, EzPickle):
             self.world.DestroyBody(self.particles.pop(0))
 
     def _apply_drag(self, body):
-        vel = body.linearVelocity
-        cog = body.worldCenter
-        dragConstant = 0.75
-        Ay = config.LANDER_DIAMETER * (abs(config.LANDER_DIAMETER*math.cos(body.angle)) 
-                                     + abs(config.LANDER_HEIGHT*math.sin(body.angle)))
-        Ax = config.LANDER_DIAMETER * (abs(config.LANDER_DIAMETER*math.sin(body.angle)) 
-                                     + abs(config.LANDER_HEIGHT*math.cos(body.angle)))
-
-        dragForce = (dragConstant*config.SEA_LEVEL_DENSITY*vel.x*vel.x*Ax) / 2, (dragConstant*config.SEA_LEVEL_DENSITY*vel.y*vel.y*Ay) / 2
-        body.ApplyForce((dragForce[0], dragForce[1]), (cog.x, cog.y), False)
-        self._record_metrics({"dragForce.x": dragForce[0], "dragForce.y": dragForce[1]})
-
+        drag, cog = drag_force(body, config.SEA_LEVEL_DENSITY, 0.75)
+        body.ApplyForce((drag[0], drag[1]), (cog.x, cog.y), False)
+        self._record_metrics({"dragForce.x": drag[0], "dragForce.y": drag[1]})
 
     def _record_metrics(self, metrics):
         for metric in metrics.keys():
@@ -137,6 +154,7 @@ class Env(gym.Env, EzPickle):
             elif 3 in actions:
                 self.agent.fireSideEngine(1.0, 1, self._create_particle)
 
+        # TODO: Test
         self._apply_drag(self.agent.body)
 
         self.world.Step(1.0 / config.FPS, 6, 2)
@@ -163,16 +181,11 @@ class Env(gym.Env, EzPickle):
         reward = 0
 
         # See if state is done
-        done = False
-        if self.game_over:
-            done = True
-            reward = -100
-        if not self.agent.body.awake:
-            done = True
-            reward = +100
-        if self.done: 
-            done = True
-
+        # TODO: Test
+        done, completion_reward = episode_complete(self.agent, self)    
+        if completion_reward is not None:
+            reward += completion_reward
+            
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):

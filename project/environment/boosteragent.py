@@ -23,6 +23,8 @@ def side_engine_impulse_position(body, direction, engine_height, engine_away):
 class BoosterAgent:
     def __init__(self, world, W, H, np_random):
         self.body = builder.generate_booster(world, W, H, np_random)
+        self.body.diameter  = config.LANDER_DIAMETER
+        self.body.height    = config.LANDER_HEIGHT
         self.np_random = np_random
         self.MAIN_ENGINE_POWER = transform_engine_power(config.MAIN_ENGINE_POWER, config.FPS)
         self.SIDE_ENGINE_POWER = transform_engine_power(config.SIDE_ENGINE_POWER, config.FPS)
