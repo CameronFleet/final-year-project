@@ -1,19 +1,19 @@
 import sys, math
 
-import environment.builder as builder
-from environment.boosteragent import BoosterAgent
+import project.environment.builder as builder
+from project.environment.boosteragent import BoosterAgent
 
 import Box2D
 from Box2D.b2 import circleShape
 
-from environment.detector import ContactDetector
+from project.environment.detector import ContactDetector
 import numpy as np
 
 import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
 
-import config
+import project.config as config
 import time
 
 class Env(gym.Env, EzPickle):
@@ -176,7 +176,7 @@ class Env(gym.Env, EzPickle):
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):
-        import util.rendering as rendering
+        import project.util.rendering as rendering
         import pyglet
         from pyglet.window import key
 

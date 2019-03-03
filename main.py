@@ -1,8 +1,8 @@
 import numpy as np
 import sys
-import config
-from environment.environment import Env
-from algorithms.pid_alg import PIDAlg
+import project.config as config
+from project.environment.environment import Env
+from project.algorithms.pid_alg import PIDAlg
 import time
 
 def test_lander(env, controller, seed=None, render=False):
