@@ -2,7 +2,10 @@
 from statistics import mode
 import numpy as np
 import math
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 import os
     
 class PID: 
