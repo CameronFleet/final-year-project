@@ -106,6 +106,7 @@ class PIDAlg:
 
         if save:
             os.system("mkdir episodes/episode_"+str(self.episode_number))
+            os.system("touch episodes/episode_"+str(self.episode_number)+"/episode.save")
 
         lims   = {  "Thrust":(0,100,10), 
                     "Alpha":(-0.5, 0.5,0.1), 
@@ -130,6 +131,16 @@ class PIDAlg:
                                 unit=units[metric])
         plt.show()
 
+    def _save_metric(self, metric, values):
+        f = open("episodes/episode_"+str(self.episode_number)+"/episode.save", "a")
+        f.write("{METRIC:" + metric + ",VALUES:")
+        for i, value in enumerate(values):
+            if i == len(values) -1:
+                f.write(str(value) + "} \n")
+            else:
+                f.write(str(value) + ",")
+
+
     def _draw_metric(self, metric, values, lim=None, isControlSignal=None, K=None, save=False, unit=None):
 
         if len(values) == 0:
@@ -145,6 +156,9 @@ class PIDAlg:
 
         if lim is not None:
                 plt.ylim((lim[0]-lim[2], lim[1]+lim[2]))
+
+        if save: 
+            self._save_metric(metric, values)
 
         if isControlSignal:
             plt.title(metric+" vs Time with Kp=" + str(K[0])+ " Ki=" +str(K[1])+ " Kd="+ str(K[2]))

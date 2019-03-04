@@ -30,7 +30,7 @@ def test_lander(env, controller, seed=None, render=False):
         if step > 1000:
             break
 
-    controller.report(save=True, onlyControl=True)
+    controller.report(save=True, onlyControl=False)
     return 0
 
 def _record_episode():
