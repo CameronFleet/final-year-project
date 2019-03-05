@@ -6,7 +6,7 @@ def transform_engine_power(power, fps):
     return power * 1/fps
 
 def engine_impulse(power, body_tilt, gimbal = 0, dispersion = 0, orientation = 0):
-    angle = body_tilt +gimbal + dispersion
+    angle = -body_tilt +gimbal + dispersion
     Ft = power
     Fx = Ft*math.sin(angle + orientation)
     Fy = Ft*math.cos(angle + orientation)

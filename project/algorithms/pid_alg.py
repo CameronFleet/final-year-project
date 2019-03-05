@@ -32,13 +32,16 @@ class PID:
         result = K[0]*e + K[1]*self.integral + K[2]*de + bias
         return result
 
+# self.altitude_pid   = PID(self.time_step,(-0.24,0,0.5))
+# self.x_pid          = PID(self.time_step,(0.005625,0.028125,0.0075))
+# self.angular_pid    = PID(self.time_step,(25,0,0.1)) 0.0775
 class PIDAlg:
 
     def __init__(self, timestep, seed, episode_number):
         self.time_step   = timestep
-        self.altitude_pid   = PID(self.time_step,(-0.24,0,0.5))
-        self.x_pid          = PID(self.time_step,(0.005625,0.028125,0.0075))
-        self.angular_pid    = PID(self.time_step,(25,0,0.1))
+        self.altitude_pid   = PID(self.time_step,(0.375,0.00085,1.91))
+        self.x_pid          = PID(self.time_step,(0.0095,0.000015,0.0775))
+        self.angular_pid    = PID(self.time_step,(15,1.15,9.35))
         self.times         = [0] 
         self.seed          = seed
         self.episode_number = episode_number
@@ -68,16 +71,18 @@ class PIDAlg:
         x, y, vx, vy,theta, vtheta, alpha, l1, l2 = state
 
         # FT PID
-        Ft = self.altitude_pid.calculate(y-env.GOAL[1], de=-vy)
+        Ft = self.altitude_pid.calculate(env.GOAL[1]-y, de=-vy)
         Ft = 0 if  Ft < 0 else Ft
         Ft = 1 if Ft > 1 else Ft
         if l1 or l2:
             Ft=0
         
+
         # ALPHA PID
+        goal_direction = 1 if env.GOAL[0]-x > 0 else -1
         alpha = self.x_pid.calculate(env.GOAL[0]-x, de=-vx)
-        alpha = -0.5 if alpha < -0.5 else alpha
-        alpha = 0.5 if alpha > 0.5 else alpha
+        alpha = -0.1 if alpha < -0.1 else alpha
+        alpha = 0.1 if alpha > 0.1 else alpha
 
         # ANGULAR PID
         Fs = -self.angular_pid.calculate(theta, de=vtheta)
@@ -85,7 +90,7 @@ class PIDAlg:
         Fs = 1 if Fs > 1 else Fs
 
         # Actions selected for next world step
-        actions=[Ft, 0 , Fs]
+        actions=[Ft, alpha , Fs]
 
         self._record_metrics({  "Thrust":Ft*100, 
                                 "Alpha":alpha,
@@ -109,7 +114,7 @@ class PIDAlg:
             os.system("touch episodes/episode_"+str(self.episode_number)+"/episode.save")
 
         lims   = {  "Thrust":(0,100,10), 
-                    "Alpha":(-0.5, 0.5,0.1), 
+                    "Alpha":(-0.1, 0.1,0.1), 
                     "Side Thrust":(-100,100,10)}
         consts = {  "Thrust":self.altitude_pid.consts, 
                     "Alpha":self.x_pid.consts, 

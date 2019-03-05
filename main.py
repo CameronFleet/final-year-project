@@ -4,14 +4,18 @@ import project.config as config
 from project.environment.environment import Env
 from project.algorithms.pid_alg import PIDAlg
 import time
+from project.util.bcolors import bcolors
 
 def test_lander(env, controller, seed=None, render=False):
 
     actions = []
     step = 0 
+    max_step = 4000
 
     while True: 
         step += 1
+        if step % 80 ==0:
+            print(bcolors.WARNING + 'STEP: ',round((step/max_step)*100,1) , '%' + bcolors.ENDC, end='\r')
         s, r, done, _ = env.step(actions)
         x, y, vx, vy,theta, vtheta, alpha, l1, l2 = s
 
@@ -27,8 +31,11 @@ def test_lander(env, controller, seed=None, render=False):
             actions = []
             break
 
-        if step > 1000:
+        if step > max_step:
             break
+
+    print(bcolors.OKGREEN + 'DONE' + bcolors.ENDC)
+    print(bcolors.OKGREEN + 'REWARD: ' + (bcolors.OKGREEN if r > 0 else bcolors.FAIL + str(r) + bcolors.ENDC))
 
     controller.report(save=True, onlyControl=False)
     return 0
@@ -41,10 +48,8 @@ def _record_episode():
     return episode_number
 
 if __name__ == '__main__':
-    env = Env(True)
+    env = Env(True,)
     episode_number = _record_episode()
     alg = PIDAlg(1/config.FPS, env.seed, episode_number)
     test_lander(env, alg, render=True)
-
-
 
