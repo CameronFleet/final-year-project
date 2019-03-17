@@ -59,8 +59,9 @@ def generate_landing_legs(world, W, H, booster):
             position=(W/2- i * config.LEG_AWAY, H-60),
             angle=(i * 0.05),
             fixtures=fixtureDef(
-                shape=polygonShape(box=(config.LEG_W, config.LEG_H )),
-                density=1.0,
+                shape=polygonShape(box=(config.LEG_W, config.LEG_H)),
+                density=75,
+                friction=1,
                 restitution=0.0,
                 categoryBits=0x0020,
                 maskBits=0x001)
@@ -76,14 +77,14 @@ def generate_landing_legs(world, W, H, booster):
             enableMotor=True,
             enableLimit=True,
             maxMotorTorque=config.LEG_SPRING_TORQUE,
-            motorSpeed=+0.3 * i  # low enough not to jump back into the sky
+            motorSpeed=+0.1 * i  # low enough not to jump back into the sky
         )
         if i == -1:
-            rjd.lowerAngle = +0.9 - 0.5  # Yes, the most esoteric numbers here, angles legs have freedom to travel within
-            rjd.upperAngle = +0.9
+            rjd.lowerAngle = +0.4  # Yes, the most esoteric numbers here, angles legs have freedom to travel within
+            rjd.upperAngle = +0.65
         else:
-            rjd.lowerAngle = -0.9
-            rjd.upperAngle = -0.9 + 0.5
+            rjd.lowerAngle = -0.65
+            rjd.upperAngle = -0.4
         leg.joint = world.CreateJoint(rjd)
         legs.append(leg)
 

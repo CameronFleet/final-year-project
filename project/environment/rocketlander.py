@@ -27,13 +27,15 @@ def drag_force(body, air_density, drag_constant):
     drag = (drag_constant*air_density*vel.x*vel.x*Ax) / 2, (drag_constant*air_density*vel.y*vel.y*Ay) / 2
     return drag, cog
 
-def episode_complete(agent, env):
+def episode_complete(legs, agent, env):
     done = False
     reward = None
+    vel = agent.body.linearVelocity
+    
     if env.game_over:
         done = True
         reward = -100
-    if not agent.body.awake:
+    if legs[0].ground_contact and legs[1].ground_contact and vel.length < 0.1:
         done = True
         reward = +100
     if env.done: 
@@ -41,8 +43,28 @@ def episode_complete(agent, env):
         reward = 0
     return done, reward
 
+def discretization_actions(Ft_discretization, Alpha_discretization, Fs_discretization):
+    actions = []
+    Ft_bounds = 0, 1.0
+    alpha_bounds = -0.05, 0.05
+    Fs_bounds = -1.0, 1.0
 
-class Env(gym.Env, EzPickle):
+    for Ft in np.arange(Ft_bounds[0], Ft_bounds[1] + 0.001 , Ft_bounds[1]/Ft_discretization):
+
+        if Ft != 0:
+            for alpha in np.arange(alpha_bounds[0], alpha_bounds[1] + 0.001 , alpha_bounds[1]/Alpha_discretization):
+                for Fs in np.arange(Fs_bounds[0], Fs_bounds[1] + 0.001, Fs_bounds[1]/Fs_discretization):
+                    actions.append((Ft, alpha, Fs))
+
+        if Ft == 0:
+            for Fs in np.arange(Fs_bounds[0], Fs_bounds[1] + 0.001, Fs_bounds[1]/Fs_discretization):
+                actions.append((Ft, 0, Fs))
+
+
+    return actions
+
+
+class RocketLander(gym.Env, EzPickle):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': config.FPS
@@ -67,8 +89,41 @@ class Env(gym.Env, EzPickle):
 
         self.np_random, self.seed = seeding.np_random(seed)
         
-        self.observation_space = spaces.Box(-np.inf, np.inf, shape=(8,), dtype=np.float32)
-        self.action_space = spaces.Discrete(4)
+
+        """
+            Observation Space
+            ( 
+            x,                        (0 ---> WORLD_W)
+            y,                        (0 ---> WORLD_H)
+            vx,                       (-110 ---> 110)
+            vy,                       (-110 ---> 110)
+            ф,                        (-4п ---> 4п)
+            vф,                       (-4п ---> 4п)
+            leg[0] contact,           ({0,1})
+            leg[1] contact            ({0,1})
+            )
+        """
+        low = np.array([0, 0, -110, -110, -4*math.pi, -4*math.pi, 0, 0])
+        high = np.array([config.WORLD_W, config.WORLD_H, 110, 110, 4*math.pi, 4*math.pi, 1, 1])
+        self.observation_space = spaces.Box(low, high, dtype=np.float32)
+
+        """
+            Action Space
+            action    Ft, alpha, Fs
+            0         (0,0,0)
+            1         (1.0, 0, 0)
+            2         (0.5, 0, 0)
+             ...
+            28        (1.0, -0.05, 0.5)
+            29        (0.5, 0.05, 0.5)
+            30        (0.5, -0.05, 0.5)
+            31        (0,0,1.0)
+            32        (0,0,-1.0)
+            33        (0,0,0.5)
+            34        (0,0,-0.5)
+        """
+        self.actions = discretization_actions(1,1,1)
+        self.action_space = spaces.Discrete(len(self.actions))
 
         self.GOAL = [config.WORLD_W*config.GOAL_X_SCALED, config.SEA_LEVEL + config.GOAL_H]
 
@@ -111,7 +166,7 @@ class Env(gym.Env, EzPickle):
 
         self.drawlist = [self.agent.body, self.terrian, self.pad] + self.legs
 
-        return self.step([])
+        return self.step(None)
 
     def _create_particle(self, mass, x, y, ttl):
         p = builder.generate_particle(self.world, x, y, mass)
@@ -133,28 +188,22 @@ class Env(gym.Env, EzPickle):
         for metric in metrics.keys():
             self.tracked_metrics[metric] = metrics[metric]
 
-    def step(self, actions):
+    def step(self, action):
 
         if self.user_action is not None:
-            actions = [self.user_action]
+            action = [self.user_action]
 
-        if self.continuous:
-            if len(actions) == 3:
-                Ft, alpha, Fs = actions
-                if Ft:
-                    self.agent.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
-                if Fs:
-                    self.agent.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
-        else: 
-            if 2 in actions:
-                self.agent.fireMainEngine(1.0, 0, self._create_particle)
+        if action is not None:
+            if self.continuous:
+                Ft, alpha, Fs = action
+            else: 
+                Ft, alpha, Fs = self.actions[action]
+        
+            if Ft:
+                self.agent.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
+            if Fs:
+                self.agent.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
 
-            if 1 in actions:
-                self.agent.fireSideEngine(1.0, -1, self._create_particle)
-            elif 3 in actions:
-                self.agent.fireSideEngine(1.0, 1, self._create_particle)
-
-        # TODO: Test
         self._apply_drag(self.agent.body)
 
         self.world.Step(1.0 / config.FPS, 6, 2)
@@ -170,19 +219,18 @@ class Env(gym.Env, EzPickle):
             vel.y,
             self.agent.body.angle,
             self.agent.body.angularVelocity,
-            0,
             1.0 if self.legs[0].ground_contact else 0.0,
             1.0 if self.legs[1].ground_contact else 0.0
         ]
-        assert len(state) == 9
+        assert len(state) == 8
 
         # Calculate reward
-        x, y, vx, vy, theta, vtheta, alpha, l1, l2 = state
+        x, y, vx, vy, theta, vtheta, l1, l2 = state
         reward = 0
 
         # See if state is done
         # TODO: Test
-        done, completion_reward = episode_complete(self.agent, self)    
+        done, completion_reward = episode_complete(self.legs, self.agent, self)    
         if completion_reward is not None:
             reward += completion_reward
             

@@ -68,7 +68,7 @@ class PIDAlg:
     def go(self, state, env): 
 
         # State feedback
-        x, y, vx, vy,theta, vtheta, alpha, l1, l2 = state
+        x, y, vx, vy,theta, vtheta, l1, l2 = state
 
         # FT PID
         Ft = self.altitude_pid.calculate(env.GOAL[1]-y, de=-vy)
