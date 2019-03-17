@@ -35,7 +35,7 @@ def test_lander(env, controller, seed=None, render=False, report=False):
             break
 
     print(bcolors.OKGREEN + 'DONE' + bcolors.ENDC)
-    print(bcolors.OKGREEN + 'REWARD: ' + (bcolors.OKGREEN if r > 0 else bcolors.FAIL + str(r) + bcolors.ENDC))
+    print(bcolors.OKGREEN + 'REWARD: ' + (bcolors.OKGREEN + str(r) + bcolors.ENDC if r > 0 else bcolors.FAIL + str(r) + bcolors.ENDC))
 
     if report:
         controller.report(save=True, onlyControl=False)
