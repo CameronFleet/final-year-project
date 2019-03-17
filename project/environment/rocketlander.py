@@ -34,10 +34,10 @@ def episode_complete(legs, agent, env):
     
     if env.game_over:
         done = True
-        reward = -100
-    if legs[0].ground_contact and legs[1].ground_contact and vel.length < 0.1:
+        reward = -100 - vel.length*3
+    if legs[0].ground_contact and legs[1].ground_contact :
         done = True
-        reward = +100
+        reward = +100 - vel.length*3
     if env.done: 
         done = True
         reward = 0
@@ -81,7 +81,7 @@ class RocketLander(gym.Env, EzPickle):
         self.particles = []
 
         self.prev_reward = None
-        self.user_action = None
+        self.user_action = (0,0,0)
 
         self.done = False
 
@@ -89,7 +89,6 @@ class RocketLander(gym.Env, EzPickle):
 
         self.np_random, self.seed = seeding.np_random(seed)
         
-
         """
             Observation Space
             ( 
@@ -103,6 +102,7 @@ class RocketLander(gym.Env, EzPickle):
             leg[1] contact            ({0,1})
             )
         """
+
         low = np.array([0, 0, -110, -110, -4*math.pi, -4*math.pi, 0, 0])
         high = np.array([config.WORLD_W, config.WORLD_H, 110, 110, 4*math.pi, 4*math.pi, 1, 1])
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
@@ -190,11 +190,11 @@ class RocketLander(gym.Env, EzPickle):
 
     def step(self, action):
 
-        if self.user_action is not None:
-            action = [self.user_action]
+        if self.user_action != (0,0,0):
+            action = self.user_action
 
         if action is not None:
-            if self.continuous:
+            if self.continuous or self.user_action != (0,0,0):
                 Ft, alpha, Fs = action
             else: 
                 Ft, alpha, Fs = self.actions[action]
@@ -226,7 +226,13 @@ class RocketLander(gym.Env, EzPickle):
 
         # Calculate reward
         x, y, vx, vy, theta, vtheta, l1, l2 = state
-        reward = 0
+        reward = (
+                -abs(vtheta)
+                -abs(theta)
+                +(1/max( abs(x - self.GOAL[0]) ,1))
+                )
+
+        print(reward)
 
         # See if state is done
         # TODO: Test
@@ -249,11 +255,11 @@ class RocketLander(gym.Env, EzPickle):
             @self.viewer.window.event
             def on_key_press(symbol, modifiers):
                 if symbol == key.UP:
-                    self.user_action = 2
+                    self.user_action = (1, self.user_action[1], self.user_action[2])
                 if symbol == key.LEFT: 
-                    self.user_action = 1
+                    self.user_action = (self.user_action[0], -0.1, self.user_action[2])
                 if symbol == key.RIGHT:
-                    self.user_action = 3
+                    self.user_action = (self.user_action[0], 0.1, self.user_action[2])
                 if symbol == key.Q:
                     self.viewer.close()
                     self.done = True
@@ -262,7 +268,12 @@ class RocketLander(gym.Env, EzPickle):
 
             @self.viewer.window.event
             def on_key_release(symbol, modifiers):
-                self.user_action = None 
+                if symbol == key.UP:
+                    self.user_action = (0, self.user_action[1], self.user_action[2])
+                if symbol == key.LEFT: 
+                    self.user_action = (self.user_action[0], 0, self.user_action[2])
+                if symbol == key.RIGHT:
+                    self.user_action = (self.user_action[0], 0, self.user_action[2])
 
         # Draw metrics
         self.viewer.draw_fps()
