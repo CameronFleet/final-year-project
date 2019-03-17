@@ -27,26 +27,26 @@ class TestAgent(object):
         assert Fx == 0 and Fy == 300
 
     def test_engine_impulse_45_degreee_with_dispersion(self):
-        Fx, Fy = agent.engine_impulse(424.264068712, math.pi/4 - 0.1, 0.1, 0)
+        Fx, Fy = agent.engine_impulse(424.264068712, 0, 0.1, math.pi/4 - 0.1)
         expected_Fx = 300
         expected_Fy = 300
         assert round(Fx,5) == expected_Fx and round(Fy,5) == expected_Fy
 
     def test_engine_impulse_60_degree(self):
         Fx, Fy = agent.engine_impulse(424.264068712, math.pi/3, 0, 0)
-        expected_Fx = 367.42346
+        expected_Fx = -367.42346
         expected_Fy = 212.13203
         assert round(Fx,5) == expected_Fx and round(Fy,5) == expected_Fy
 
     def test_engine_impulse_60_degree_negative_force(self):
         Fx, Fy = agent.engine_impulse(-424.264068712, math.pi/3, 0, 0)
-        expected_Fx = -367.42346
+        expected_Fx = 367.42346
         expected_Fy = -212.13203
         assert round(Fx,5) == expected_Fx and round(Fy,5) == expected_Fy
 
     def test_engine_impulse_negative_60_degree(self):
         Fx, Fy = agent.engine_impulse(424.264068712, -math.pi/3, 0, 0)
-        expected_Fx = -367.42346
+        expected_Fx = 367.42346
         expected_Fy = 212.13203
         assert round(Fx,5) == expected_Fx and round(Fy,5) == expected_Fy
 

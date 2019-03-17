@@ -101,3 +101,6 @@ class TestEnvironment(object):
         assert done == False and reward == None
 
         
+    def test_discretization_actions(self):
+        #TODO: Write this test! for discretization of 1,1,1 and 2,1,2
+        assert(1 ==2)
