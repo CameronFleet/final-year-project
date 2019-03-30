@@ -2,13 +2,11 @@ import sys, math
 
 import project.environment.builder as builder
 from project.environment.boosteragent import BoosterAgent
+from project.environment.detector import ContactDetector
 
 import Box2D
 from Box2D.b2 import circleShape
-
-from project.environment.detector import ContactDetector
 import numpy as np
-
 import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
@@ -31,22 +29,46 @@ def episode_complete(legs, agent, env):
     done = False
     reward = None
     vel = agent.body.linearVelocity
+    pos = agent.body.position
+    angle = agent.body.angle
     
+    # Hits the ground
     if env.game_over:
         done = True
-        reward = -100 - vel.length*3
+        reward = -50
+        # reward = - abs(vel.length) \
+        #          - abs(angle)*5 \
+        #          - abs(env.GOAL[0] - pos.x) / 2
+
+    # Goes off screen
+    if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
+        done = True
+        reward = -50
+
+    # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
         done = True
-        reward = +100 - vel.length*3
+        reward = +50 
+        # reward = +50 - abs(vel.length) \
+        #                - abs(angle)*5 \
+        #                - abs(env.GOAL[0] - pos.x) / 2
+
+    # Manual termination    
     if env.done: 
         done = True
         reward = 0
+
+    # Running for too long!
+    if env.steps > 600:
+        reward = -50
+        done = True
+
     return done, reward
 
 def discretization_actions(Ft_discretization, Alpha_discretization, Fs_discretization):
     actions = []
     Ft_bounds = 0, 1.0
-    alpha_bounds = -0.05, 0.05
+    alpha_bounds = -0.1, 0.1
     Fs_bounds = -1.0, 1.0
 
     for Ft in np.arange(Ft_bounds[0], Ft_bounds[1] + 0.001 , Ft_bounds[1]/Ft_discretization):
@@ -63,7 +85,6 @@ def discretization_actions(Ft_discretization, Alpha_discretization, Fs_discretiz
 
     return actions
 
-
 class RocketLander(gym.Env, EzPickle):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
@@ -72,6 +93,7 @@ class RocketLander(gym.Env, EzPickle):
 
     def __init__(self, continuous = False, seed=None):
         EzPickle.__init__(self)
+
         self.viewer = None
         self.continuous = continuous
         
@@ -83,6 +105,7 @@ class RocketLander(gym.Env, EzPickle):
         self.prev_reward = None
         self.user_action = (0,0,0)
 
+        self.steps = 0
         self.done = False
 
         self.tracked_metrics = {}
@@ -103,8 +126,8 @@ class RocketLander(gym.Env, EzPickle):
             )
         """
 
-        low = np.array([0, 0, -110, -110, -4*math.pi, -4*math.pi, 0, 0])
-        high = np.array([config.WORLD_W, config.WORLD_H, 110, 110, 4*math.pi, 4*math.pi, 1, 1])
+        low = np.array([0, 0, -120, -120, -4*math.pi, -4*math.pi, 0, 0])
+        high = np.array([config.WORLD_W, config.WORLD_H, 120, 120, 4*math.pi, 4*math.pi, 1, 1])
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
 
         """
@@ -122,7 +145,8 @@ class RocketLander(gym.Env, EzPickle):
             33        (0,0,0.5)
             34        (0,0,-0.5)
         """
-        self.actions = discretization_actions(1,1,1)
+        # self.actions = discretization_actions(1,1,1)
+        self.actions = [(0,0,0), (1.0, 0, 0), (1.0, -0.1, 0), (1.0, 0.1, 0), (0,0,-1.0), (0,0,1.0)]
         self.action_space = spaces.Discrete(len(self.actions))
 
         self.GOAL = [config.WORLD_W*config.GOAL_X_SCALED, config.SEA_LEVEL + config.GOAL_H]
@@ -165,8 +189,9 @@ class RocketLander(gym.Env, EzPickle):
         self.legs = builder.generate_landing_legs(self.world, W, H, self.agent.body)
 
         self.drawlist = [self.agent.body, self.terrian, self.pad] + self.legs
+        self.steps = 0
 
-        return self.step(None)
+        return self.step(None)[0]
 
     def _create_particle(self, mass, x, y, ttl):
         p = builder.generate_particle(self.world, x, y, mass)
@@ -189,6 +214,8 @@ class RocketLander(gym.Env, EzPickle):
             self.tracked_metrics[metric] = metrics[metric]
 
     def step(self, action):
+
+        self.steps+= 1
 
         if self.user_action != (0,0,0):
             action = self.user_action
@@ -224,15 +251,46 @@ class RocketLander(gym.Env, EzPickle):
         ]
         assert len(state) == 8
 
-        # Calculate reward
-        x, y, vx, vy, theta, vtheta, l1, l2 = state
-        reward = (
-                -abs(vtheta)
-                -abs(theta)
-                +(1/max( abs(x - self.GOAL[0]) ,1))
-                )
+        
+        """
+        REWARD SCHEMES
 
-        print(reward)
+        1 = (
+                -abs(vtheta) 
+                -abs(theta) 
+                +(1/max( abs(x - self.GOAL[0]) ,1)
+            )
+        2 = -1
+        3 = (
+                -10*abs(vtheta)
+                -10*abs(theta)
+                +(1/max( abs(x - self.GOAL[0]) ,1))
+                -(10* max(0, vel.y))
+            )
+        4 = (
+                -2*abs(theta)
+                +(1/max( abs(x - self.GOAL[0]) ,1))
+                -(2* max(0, vel.y))
+                +10*l1
+                +10*l2
+            )
+        5 = 0
+        """
+        x, y, vx, vy, theta, vtheta, l1, l2 = state
+        reward = 0
+
+        x_diff = x - self.GOAL[0]
+        y_diff = y - self.GOAL[1]
+
+        shaping = \
+            -0.5*np.sqrt(x_diff*x_diff + y_diff*y_diff) \
+            -np.sqrt(vx*vx + vy*vy) \
+            -100*abs(theta) 
+
+        if self.prev_shaping is not None: 
+            reward = shaping - self.prev_shaping
+
+        self.prev_shaping = shaping
 
         # See if state is done
         # TODO: Test
