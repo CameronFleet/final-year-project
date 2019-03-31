@@ -7,9 +7,17 @@ import numpy as np
 
 import os
 
-LEARN_EVERY = 5
-
-def fixed_q_learning(env, estimator, version="1",  max_episodes = 500, discount_factor = 0.98, epsilon=1, epsilon_decay=0.95, epsilon_min=0.01, batch_size= 30, update_target_network=5000, render=False):
+def fixed_q_learning(env,
+                    estimator, version="1",  
+                    max_episodes = 500, 
+                    discount_factor = 0.98, 
+                    epsilon=1, 
+                    epsilon_decay=0.95, 
+                    epsilon_min=0.01, 
+                    batch_size= 30, 
+                    update_target_network=5000, 
+                    learn_every=1, 
+                    render=False):
 
     stats = Stats(max_episodes)
     directory ="weights/FDQN_v{}/".format(version)
@@ -49,7 +57,7 @@ def fixed_q_learning(env, estimator, version="1",  max_episodes = 500, discount_
                 
             
             # Experience a replay
-            if total_t % LEARN_EVERY == 0:
+            if total_t % learn_every == 0:
                 estimator.replay(batch_size, discount_factor)
 
             # Update target network

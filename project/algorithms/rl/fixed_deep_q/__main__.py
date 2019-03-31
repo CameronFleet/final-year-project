@@ -71,6 +71,7 @@ stats = fixed_q_learning(env,
                         epsilon_min=0.1, 
                         batch_size= 64, 
                         update_target_network=10000,  
+                        learn_every=5
                         render=False)
 """
 
@@ -95,9 +96,10 @@ stats = fixed_q_learning(env,
                         discount_factor = 0.99, 
                         epsilon=1, 
                         epsilon_decay=0.99, 
-                        epsilon_min=0.1, 
+                        epsilon_min=0.01, 
                         batch_size= 64, 
                         update_target_network=10000,  
+                        learn_every=5,
                         render=False)
 stats.plot(10, show=True)
 
