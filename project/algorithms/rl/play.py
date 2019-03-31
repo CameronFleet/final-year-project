@@ -1,8 +1,9 @@
 import numpy as np
 import sys
-sys.path.append("/Users/cameronfleet/Desktop/University/PROJECT/dev/")
+sys.path.append("C:\\Users\\legac\\Desktop\\Project\\final-year-project\\")
 import gym
 from estimators.nnestimator import NNEstimator
+from estimators.fixed_nnestimator import FixedNNEstimator
 from project.environment.rocketlander import RocketLander
 
 
@@ -31,8 +32,9 @@ if __name__ == '__main__':
     env = gym.envs.make("LunarLander-v2")
     env.name = "LunarLander-v2"
 
-    estimator = NNEstimator(env)
-    estimator.load("weights/DSN:LunarLander-v2,eps=2800,gamma=0.99,epsilon=1,epsilon_decay=0.98,epsilon_min=0.05")
+    estimator = FixedNNEstimator(env,loaded=True)
+    estimator.load("weights/FDQN_v5/LunarLander-v2(400-1000)")
+
 
     play(env, estimator)
 

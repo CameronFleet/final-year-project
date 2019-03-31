@@ -19,7 +19,7 @@ class Stats:
         last_epsilon = self.epsilons[-1]
         print("Episode {}/{}. Reward {}. Epsilon {}.".format(len(self.rewards), self.max_ep, last_reward, last_epsilon))
         
-    def plot(self, window_size = 20):
+    def plot(self, window_size = 20, show=False):
         
         y = []
         for i in range(len(self.rewards)):
@@ -32,4 +32,9 @@ class Stats:
         plt.plot([ ep for ep in range(len(self.rewards))], y)
         plt.xlabel("episode")
         plt.ylabel("reward")
-        plt.show()
+        if show:
+            plt.show()
+
+    def save_progress(self, window_size, path):
+        self.plot(10)
+        plt.savefig(path)
