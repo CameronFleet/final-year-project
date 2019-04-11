@@ -21,6 +21,7 @@ def test_lander(env, controller, seed=None, render=False, report=False):
 
         action = controller.go(s, env)
 
+        action = (0.5,0,0)
         if l1 or l2:
             action = None
 
@@ -50,7 +51,7 @@ def _record_episode():
     return episode_number
 
 if __name__ == '__main__':
-    env = RocketLander(True,)
+    env = RocketLander(True,time_terminated=False, moving_goal =True)
     episode_number = _record_episode()
     alg = PIDAlg(1/config.FPS, env.seed, episode_number)
     test_lander(env, alg, render=True)

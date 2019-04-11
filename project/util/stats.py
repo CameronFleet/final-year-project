@@ -32,3 +32,7 @@ class Stats:
         plt.plot([ ep for ep in range(len(self.rewards))], y)
         plt.xlabel("episode")
         plt.ylabel("reward")
+
+    def save_progress(self, window_size, path):
+        self.plot(10)
+        plt.savefig(path)

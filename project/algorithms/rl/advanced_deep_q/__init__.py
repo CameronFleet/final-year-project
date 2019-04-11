@@ -4,25 +4,33 @@ sys.path.append("C:\\Users\\legac\\Desktop\\Project\\final-year-project")
 from policy import make_epsilon_greedy_policy
 from stats import Stats
 import numpy as np
-
 import os
 
-def fixed_q_learning(env,
-                    estimator, version="1",  
-                    max_episodes = 500, 
-                    discount_factor = 0.98, 
-                    epsilon=1, 
-                    epsilon_decay=0.95, 
-                    epsilon_min=0.01, 
-                    batch_size= 30, 
-                    update_target_network=5000, 
-                    learn_every=1, 
-                    render=False):
+def save(directory, estimator, stats, name, version, ep):
+    estimator.save(directory + "{}_{}".format(name, ep))
+    stats.save_progress(title="{} with {} Episodes with v{} Hyperparameters".format(name, ep, version),
+                                window_size=20, 
+                                path=directory + "PLOT_{}_EPS".format(ep))
+
+
+
+def q_learning( env,
+                estimator, version="1",  
+                max_episodes = 500, 
+                discount_factor = 0.98, 
+                epsilon=1, 
+                epsilon_decay=0.95, 
+                epsilon_min=0.01, 
+                batch_size= 30, 
+                update_target_network=5000, 
+                learn_every=1,
+                early_stopping=200, 
+                render=False):
 
     stats = Stats(max_episodes)
-    directory ="weights/FDQN_v{}/".format(version)
+    directory ="weights/v{}/".format(version)
     os.system("mkdir " + directory)
-
+    
     for ep in range(max_episodes):
 
         e = epsilon * epsilon_decay**ep if epsilon * epsilon_decay**ep > epsilon_min else epsilon_min
@@ -55,7 +63,6 @@ def fixed_q_learning(env,
             if done:
                 break
                 
-            
             # Experience a replay
             if total_t % learn_every == 0:
                 estimator.replay(batch_size, discount_factor)
@@ -66,14 +73,16 @@ def fixed_q_learning(env,
 
             state = next_state
 
+        stop_early = stats.episode_end(early_stopping)
 
-
-        stats.show()
         if ep % 100 == 0:
-            estimator.save(directory + "{}({}-{})".format(env.name, ep, max_episodes))
-            stats.save_progress(10, directory + "PLOT_{}_OF_{}".format(ep, max_episodes))
-
+            save(directory, estimator, stats, env.name, version, ep)
+        
+        if ep % 5 == 0 and stop_early: 
+            print(stop_early)
+            save(directory, estimator, stats, env.name, version, "BEST_PERFORMING_{}".format(int(stop_early)))
+            
     
-    estimator.save(directory + "{}_v{}".format(env.name, version))
+    save(directory, estimator, stats, env.name, version, ep)
     return stats
 

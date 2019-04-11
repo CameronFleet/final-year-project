@@ -27,7 +27,11 @@ class ContactDetector(contactListener):
                 if self.env.legs[i] in [contact.fixtureA.body, contact.fixtureB.body]:
                     self.env.legs[i].ground_contact = True
 
+            if self.env.agent.body in [contact.fixtureA.body, contact.fixtureB.body]:
+                self.env.game_over = True
+
     def EndContact(self, contact):
         for i in range(2):
             if self.env.legs[i] in [contact.fixtureA.body, contact.fixtureB.body]:
                 self.env.legs[i].ground_contact = False
+                

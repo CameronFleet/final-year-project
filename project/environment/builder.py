@@ -6,9 +6,7 @@ import project.config as config
 
 sea_level = config.SEA_LEVEL
 
-def generate_terrian(world, W, H):
-
-    g_x1, g_x2, g_y = W*config.GOAL_X_SCALED  - (config.GOAL_W/2), W*config.GOAL_X_SCALED + (config.GOAL_W/2), sea_level + config.GOAL_H
+def generate_terrian(world, W, H, g_x1, g_x2, g_y):
 
     pad = world.CreateStaticBody(
     position=(0,0),
@@ -45,10 +43,6 @@ def generate_booster(world, W, H, np_random):
 
     booster.color1 = (1, 1, 1)
     booster.color2 = (0.4, 0.4, 0.4)
-    booster.ApplyForceToCenter((
-        np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM),
-        np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM)
-    ), True)
 
     return booster
 

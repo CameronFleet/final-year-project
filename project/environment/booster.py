@@ -20,7 +20,7 @@ def side_engine_impulse_position(body, direction, engine_height, engine_away):
                 + engine_height*math.cos(body.angle)
                 + direction*(engine_away/2)*math.sin(body.angle))
 
-class BoosterAgent:
+class Booster:
     def __init__(self, world, W, H, np_random):
         self.body = builder.generate_booster(world, W, H, np_random)
         self.body.diameter  = config.LANDER_DIAMETER
@@ -28,6 +28,10 @@ class BoosterAgent:
         self.np_random = np_random
         self.MAIN_ENGINE_POWER = transform_engine_power(config.MAIN_ENGINE_POWER, config.FPS)
         self.SIDE_ENGINE_POWER = transform_engine_power(config.SIDE_ENGINE_POWER, config.FPS)
+        self.body.ApplyForceToCenter((
+        np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM)*1000,
+        np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM)*1000
+        ), True)
 
     def fireMainEngine(self, m_power, alpha, create_particle, record_metrics):
 

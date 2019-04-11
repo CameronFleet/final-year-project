@@ -1,7 +1,7 @@
 import sys, math
 
 import project.environment.builder as builder
-from project.environment.boosteragent import BoosterAgent
+from project.environment.booster import Booster
 from project.environment.detector import ContactDetector
 
 import Box2D
@@ -35,7 +35,7 @@ def episode_complete(legs, agent, env):
     # Hits the ground
     if env.game_over:
         done = True
-        reward = -50
+        reward = -50 - abs(vel.length)
         # reward = - abs(vel.length) \
         #          - abs(angle)*5 \
         #          - abs(env.GOAL[0] - pos.x) / 2
@@ -48,8 +48,8 @@ def episode_complete(legs, agent, env):
     # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
         done = True
-        reward = +50 
-        # reward = +50 - abs(vel.length) \
+        reward = +50 - abs(vel.length)
+        # reward = +100 - abs(vel.length) \
         #                - abs(angle)*5 \
         #                - abs(env.GOAL[0] - pos.x) / 2
 
@@ -59,7 +59,7 @@ def episode_complete(legs, agent, env):
         reward = 0
 
     # Running for too long!
-    if env.steps > 600:
+    if env.steps > env.termination_time and env.time_terminated:
         reward = -50
         done = True
 
@@ -86,12 +86,39 @@ def discretization_actions(Ft_discretization, Alpha_discretization, Fs_discretiz
     return actions
 
 class RocketLander(gym.Env, EzPickle):
+    """
+    Observation Space
+    ( 
+    x,                        (0 ---> WORLD_W)
+    y,                        (0 ---> WORLD_H)
+    vx,                       (-110 ---> 110)
+    vy,                       (-110 ---> 110)
+    ф,                        (-4п ---> 4п)
+    vф,                       (-4п ---> 4п)
+    leg[0] contact,           ({0,1})
+    leg[1] contact            ({0,1})
+
+    Action Space
+    action    Ft, alpha, Fs
+    0         (0,0,0)
+    1         (1.0, 0, 0)
+    2         (0.5, 0, 0)
+        ...
+    28        (1.0, -0.05, 0.5)
+    29        (0.5, 0.05, 0.5)
+    30        (0.5, -0.05, 0.5)
+    31        (0,0,1.0)
+    32        (0,0,-1.0)
+    33        (0,0,0.5)
+    34        (0,0,-0.5)
+    )
+    """
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': config.FPS
     }
 
-    def __init__(self, continuous = False, seed=None):
+    def __init__(self, continuous = False, seed=None, time_terminated=True, moving_goal =False, termination_time=1000):
         EzPickle.__init__(self)
 
         self.viewer = None
@@ -107,49 +134,23 @@ class RocketLander(gym.Env, EzPickle):
 
         self.steps = 0
         self.done = False
+        self.time_terminated = time_terminated
 
         self.tracked_metrics = {}
 
         self.np_random, self.seed = seeding.np_random(seed)
-        
-        """
-            Observation Space
-            ( 
-            x,                        (0 ---> WORLD_W)
-            y,                        (0 ---> WORLD_H)
-            vx,                       (-110 ---> 110)
-            vy,                       (-110 ---> 110)
-            ф,                        (-4п ---> 4п)
-            vф,                       (-4п ---> 4п)
-            leg[0] contact,           ({0,1})
-            leg[1] contact            ({0,1})
-            )
-        """
 
         low = np.array([0, 0, -120, -120, -4*math.pi, -4*math.pi, 0, 0])
         high = np.array([config.WORLD_W, config.WORLD_H, 120, 120, 4*math.pi, 4*math.pi, 1, 1])
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
 
-        """
-            Action Space
-            action    Ft, alpha, Fs
-            0         (0,0,0)
-            1         (1.0, 0, 0)
-            2         (0.5, 0, 0)
-             ...
-            28        (1.0, -0.05, 0.5)
-            29        (0.5, 0.05, 0.5)
-            30        (0.5, -0.05, 0.5)
-            31        (0,0,1.0)
-            32        (0,0,-1.0)
-            33        (0,0,0.5)
-            34        (0,0,-0.5)
-        """
         # self.actions = discretization_actions(1,1,1)
         self.actions = [(0,0,0), (1.0, 0, 0), (1.0, -0.1, 0), (1.0, 0.1, 0), (0,0,-1.0), (0,0,1.0)]
+        # self.actions = [(0.2,0,0), (1.0, 0, 0), (1.0, -0.1, 0), (1.0, 0.1, 0), (0.2, -0.1, 0), (0.2, 0.1, 0), (0.2,0,-1.0), (0.2,0,1.0), (1,0,-1.0), (1,0,1.0)]
         self.action_space = spaces.Discrete(len(self.actions))
 
-        self.GOAL = [config.WORLD_W*config.GOAL_X_SCALED, config.SEA_LEVEL + config.GOAL_H]
+        self.moving_goal = moving_goal
+        self.termination_time = termination_time
 
         self.reset()
 
@@ -158,6 +159,7 @@ class RocketLander(gym.Env, EzPickle):
         self.world.contactListener = None
         self._clean_particles(True)
         self.world.DestroyBody(self.terrian)
+        self.world.DestroyBody(self.pad)
         self.terrian = None
         self.world.DestroyBody(self.agent.body)
         self.agent = None
@@ -174,16 +176,21 @@ class RocketLander(gym.Env, EzPickle):
         W = config.WORLD_W
         H = config.WORLD_H
 
-        # GENERATE TERRIAN
-        self.terrian, self.pad = builder.generate_terrian(self.world, W, H)
+        scale = self.np_random.uniform(config.GOAL_MIN_X, config.GOAL_MAX_X) if self.moving_goal else config.GOAL_X_SCALED
+        self.GOAL = [W*scale, config.SEA_LEVEL + config.GOAL_H]
+
+
 
         # GENERATE HELIPAD POLES
-        self.helipad_x1 = W*config.GOAL_X_SCALED - config.GOAL_W/2
-        self.helipad_x2 = W*config.GOAL_X_SCALED + config.GOAL_W/2
+        self.helipad_x1 = self.GOAL[0] - config.GOAL_W/2
+        self.helipad_x2 = self.GOAL[0] + config.GOAL_W/2
         self.helipad_y = config.SEA_LEVEL + config.GOAL_H
 
+        # GENERATE TERRIAN
+        self.terrian, self.pad = builder.generate_terrian(self.world, W, H, self.helipad_x1, self.helipad_x2, self.helipad_y)
+
         # GENERATE AGENT
-        self.agent = BoosterAgent(self.world, W, H, self.np_random)
+        self.agent = Booster(self.world, W, H, self.np_random)
 
         # GENERATE LEGS
         self.legs = builder.generate_landing_legs(self.world, W, H, self.agent.body)
@@ -215,7 +222,7 @@ class RocketLander(gym.Env, EzPickle):
 
     def step(self, action):
 
-        self.steps+= 1
+        self.steps += 1
 
         if self.user_action != (0,0,0):
             action = self.user_action
@@ -240,7 +247,7 @@ class RocketLander(gym.Env, EzPickle):
         vel = self.agent.body.linearVelocity
 
         state = [
-            pos.x,
+            pos.x - self.GOAL[0],
             pos.y,
             vel.x,
             vel.y,
@@ -255,31 +262,13 @@ class RocketLander(gym.Env, EzPickle):
         """
         REWARD SCHEMES
 
-        1 = (
-                -abs(vtheta) 
-                -abs(theta) 
-                +(1/max( abs(x - self.GOAL[0]) ,1)
-            )
-        2 = -1
-        3 = (
-                -10*abs(vtheta)
-                -10*abs(theta)
-                +(1/max( abs(x - self.GOAL[0]) ,1))
-                -(10* max(0, vel.y))
-            )
-        4 = (
-                -2*abs(theta)
-                +(1/max( abs(x - self.GOAL[0]) ,1))
-                -(2* max(0, vel.y))
-                +10*l1
-                +10*l2
-            )
-        5 = 0
+        Shaped reward
+
         """
         x, y, vx, vy, theta, vtheta, l1, l2 = state
         reward = 0
 
-        x_diff = x - self.GOAL[0]
+        x_diff = x 
         y_diff = y - self.GOAL[1]
 
         shaping = \
@@ -291,6 +280,10 @@ class RocketLander(gym.Env, EzPickle):
             reward = shaping - self.prev_shaping
 
         self.prev_shaping = shaping
+
+        if action is not None:
+            reward -= 0.1*Ft
+
 
         # See if state is done
         # TODO: Test

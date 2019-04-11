@@ -79,8 +79,8 @@ class PIDAlg:
         
 
         # ALPHA PID
-        goal_direction = 1 if env.GOAL[0]-x > 0 else -1
-        alpha = self.x_pid.calculate(env.GOAL[0]-x, de=-vx)
+        goal_direction = 1 if x > 0 else -1
+        alpha = self.x_pid.calculate(x, de=-vx)
         alpha = -0.1 if alpha < -0.1 else alpha
         alpha = 0.1 if alpha > 0.1 else alpha
 
