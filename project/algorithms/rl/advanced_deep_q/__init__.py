@@ -1,23 +1,21 @@
 import itertools
 import sys
-
-
-sys.path.append("/lyceum/cf6g16/")
+sys.path.append("/Users/cameronfleet/Desktop/University/PROJECT/dev")
 from policy import make_epsilon_greedy_policy
 from stats import Stats
 import numpy as np
 import os
 
-def save(directory, estimator, stats, name, version, ep):
+def save(directory, estimator, stats, name, ep):
     estimator.save(directory + "{}_{}".format(name, ep))
-    stats.save_progress(title="{} with {} Episodes with v{} Hyperparameters".format(name, ep, version),
-                                window_size=20, 
-                                path=directory + "PLOT_{}_EPS".format(ep))
-
-
+    stats.save_progress(title="{} with {} Episodes".format(name, ep),
+                        window_size=20, 
+                        path=directory + "PLOT_{}_EPS".format(ep))
 
 def q_learning( env,
-                estimator, version="1",  
+                estimator,
+                save_dir="",
+                job="1",  
                 max_episodes = 500, 
                 discount_factor = 0.98, 
                 epsilon=1, 
@@ -29,10 +27,11 @@ def q_learning( env,
                 early_stopping=200, 
                 render=False):
 
-    stats = Stats(version, max_episodes)
-    directory ="weights/v{}/".format(version)
+    directory ="weights/{}/{}/".format(save_dir, job)
     os.system("mkdir " + directory)
-    
+
+    stats = Stats(save_dir, job, max_episodes)
+   
     for ep in range(max_episodes):
 
         e = epsilon * epsilon_decay**ep if epsilon * epsilon_decay**ep > epsilon_min else epsilon_min
@@ -77,14 +76,14 @@ def q_learning( env,
 
         stop_early = stats.episode_end(early_stopping)
 
-        if ep % 100 == 0:
-            save(directory, estimator, stats, env.name, version, ep)
+        if ep % 1000 == 0:
+            save(directory, estimator, stats, env.name, ep)
         
         if ep % 5 == 0 and stop_early: 
             print(stop_early)
-            save(directory, estimator, stats, env.name, version, "BEST_PERFORMING_{}".format(int(stop_early)))
+            estimator.save(directory + "BEST_{}".format(int(stop_early)))
             
     
-    save(directory, estimator, stats, env.name, version, ep)
+    save(directory, estimator, stats, env.name, ep)
     return stats
 

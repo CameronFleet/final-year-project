@@ -9,3 +9,4 @@ algorithms/__pycache__/
 environment/__pycache__/
 episodes/*
 episodes.log
+project/algorithms/rl/weights/
