@@ -1,6 +1,8 @@
 import itertools
 import sys
-sys.path.append("C:\\Users\\legac\\Desktop\\Project\\final-year-project")
+
+
+sys.path.append("/lyceum/cf6g16/")
 from policy import make_epsilon_greedy_policy
 from stats import Stats
 import numpy as np
@@ -27,7 +29,7 @@ def q_learning( env,
                 early_stopping=200, 
                 render=False):
 
-    stats = Stats(max_episodes)
+    stats = Stats(version, max_episodes)
     directory ="weights/v{}/".format(version)
     os.system("mkdir " + directory)
     

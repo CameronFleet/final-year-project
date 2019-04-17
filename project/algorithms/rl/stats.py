@@ -3,13 +3,14 @@ from collections import deque
 
 class Stats:
     
-    def __init__(self, max_ep):
+    def __init__(self, version, max_ep):
         self.rewards = []
         self.epsilons = []
         self.max_ep = max_ep
+        self.version = version
         self.moving_avg = deque(maxlen=100)
         self.best_performing = 0
-        
+
     def record(self, epsilon):
         self.rewards.append(0)
         self.epsilons.append(epsilon)
@@ -23,7 +24,11 @@ class Stats:
         self.moving_avg.append(last_reward)
         moving_avg = sum(self.moving_avg)/ 100
         print("Episode {}/{} Reward={} Epsilon={} 100avg={}".format(len(self.rewards), self.max_ep, last_reward, last_epsilon, moving_avg))
-        
+
+        f = open("weights/{}.txt".format(self.version), "a")
+        f.write("{},{},{},{}\n".format(len(self.rewards), last_reward, moving_avg, last_epsilon))
+        f.close()
+
         if moving_avg > early_stopping and moving_avg > self.best_performing:
             self.best_performing = moving_avg
             return moving_avg

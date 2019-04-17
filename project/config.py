@@ -49,4 +49,4 @@ LEG_SPRING_TORQUE = 10
 START_VELOCITY = (0,-80)
 
 # Randomness factor
-INITIAL_RANDOM = 1000.0  # Set 1500 to make game harder
+INITIAL_RANDOM = 15000.0  # Set 1500 to make game harder
