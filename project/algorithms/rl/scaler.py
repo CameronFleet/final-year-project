@@ -1,11 +1,15 @@
 from sklearn.preprocessing import StandardScaler
 import itertools
 from project.util.progress import printProgressBar
+from progress.bar import ShadyBar
 
 def scaler(env, sample_size=500):
     observations = []
+
+    bar = ShadyBar('Learning Scaler', max=sample_size)
+
     for e in range(sample_size):
-        printProgressBar(e, sample_size, prefix = 'Scalar Fitting:', suffix = 'Complete', length = 50)
+        bar.next()
         state = env.reset()
         observations.append(state)
         done = False
@@ -15,6 +19,7 @@ def scaler(env, sample_size=500):
     scaler = StandardScaler()
 
     scaler.fit(observations)
+    bar.finish()
     return scaler
 
 

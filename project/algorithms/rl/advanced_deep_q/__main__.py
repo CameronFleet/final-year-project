@@ -8,56 +8,46 @@ from play import play
 
 from project.environment.rocketlander import RocketLander
 parser = argparse.ArgumentParser(prog="advanced-q-learning")
-parser.add_argument('--save', default="default")
+parser.add_argument('--save-dir', default="default")
+parser.add_argument('--job', default="1")
+
+parser.add_argument('--learning-rate', default=0.00005, type=float)
+parser.add_argument('--memory-size', default=100000, type=int)
 parser.add_argument('--episodes', default=500, type=int)
+parser.add_argument('--batch-size', default=5, type=int)
+parser.add_argument('--update-target', default=10000, type=int)
 
-#env = gym.envs.make("LunarLander-v2")
-#env.name = "LunarLander-v2"
+parser.add_argument('-l', default=False, action='store_const', const=True)
 
-env = RocketLander( moving_goal =False,termination_time=1000)
-env.name = "RocketLander"
+args = parser.parse_args(sys.argv[1:])
 
-def fixed_train(env, version, episodes=5000, batch_size=5):
-    estimator = FixedNNEstimator(env, 
-                                learning_rate =0.001, 
-                                first_layer_neurons=64, 
-                                second_layer_neurons=64)
+if args.l:
+    env = gym.envs.make("LunarLander-v2")
+    env.name = "LunarLander-v2"
 
-    stats = q_learning(env, 
-                            estimator, 
-                            version=version, 
-                            max_episodes = episodes, 
-                            discount_factor = 0.99, 
-                            epsilon=1, 
-                            epsilon_decay=0.99, 
-                            epsilon_min=0.01, 
-                            batch_size= batch_size, 
-                            update_target_network=10000,  
-                            learn_every=1,
-                            early_stopping = 200,
-                            render=False)
-    stats.plot(10, show=True)
+if not args.l:
+    env = RocketLander( moving_goal =False,termination_time=1000)
+    env.name = "RocketLander"
 
-def double_train(env, version, episodes= 5000, batch_size= 5):
-    estimator = DoubleNNEstimator(env, 
-                            learning_rate =0.00005, 
-                            memory_size= 100000,
-                            first_layer_neurons=64, 
-                            second_layer_neurons=64)
 
-    stats = q_learning( env, 
+estimator = DoubleNNEstimator(env, 
+                        learning_rate = args.learning_rate, 
+                        memory_size= args.memory_size,
+                        first_layer_neurons=64, 
+                        second_layer_neurons=64)
+
+stats = q_learning( env, 
                     estimator, 
-                    version=version, 
-                    max_episodes = episodes, 
+                    save_dir=args.save_dir,
+                    job=args.job, 
+                    max_episodes = args.episodes, 
                     discount_factor = 0.99, 
                     epsilon=1, 
                     epsilon_decay=0.995, 
                     epsilon_min=0.01, 
-                    batch_size= batch_size, 
-                    update_target_network=10000,  
+                    batch_size= args.batch_size, 
+                    update_target_network=args.update_target,  
                     learn_every=1,
                     early_stopping = 200,
                     render=False)
 
-args = parser.parse_args(sys.argv[1:])
-double_train(env, args.save, episodes=args.episodes)
