@@ -48,7 +48,7 @@ def episode_complete(legs, booster, env):
     # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
         done = True
-        reward = +50 - abs(vel.length)
+        reward = +100 - 3*abs(vel.length)
         # reward = +100 - abs(vel.length) \
         #                - abs(angle)*5 \
         #                - abs(env.GOAL[0] - pos.x) / 2
