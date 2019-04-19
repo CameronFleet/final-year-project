@@ -1,11 +1,11 @@
 import numpy as np
 
 from pid import Controller, record_episode
-from environment import RocketLander
+from environment import BoosterLander
 import environment.config as config
 from util import bcolors
 
-env = RocketLander(continuous=True, time_terminated=False, moving_goal =True)
+env = BoosterLander(continuous=True, time_terminated=False, moving_goal =True)
 episode_number = record_episode(env.seed)
 controller = Controller(1/config.FPS, env.seed, episode_number)
 

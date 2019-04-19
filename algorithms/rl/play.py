@@ -5,7 +5,7 @@ import gym
 from estimators.nnestimator import NNEstimator
 from estimators.fixed_nnestimator import FixedNNEstimator
 from estimators.double_nnestimator import DoubleNNEstimator
-from environment.rocketlander import RocketLander
+from environment.boosterlander import BoosterLander
 import time
 
 def play(env, estimator, debug=False):
@@ -43,8 +43,8 @@ def test(env, estimator, n= 100):
 if __name__ == '__main__':
     # env = gym.envs.make("CartPole-v1")
     # env.name = "CartPole-v1"
-    env = RocketLander(time_terminated=True, moving_goal=False)
-    env.name = "RocketLander"
+    env = BoosterLander(time_terminated=True, moving_goal=False)
+    env.name = "BoosterLander"
     # env = gym.envs.make("LunarLander-v2")
     # env.name = "LunarLander-v2"
 

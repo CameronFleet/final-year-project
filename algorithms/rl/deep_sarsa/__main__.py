@@ -3,7 +3,7 @@ from estimators.nnestimator import NNEstimator
 from deep_sarsa import sarsa
 from play import play
 
-from project.environment.rocketlander import RocketLander
+from project.environment.boosterlander import BoosterLander
 
 def train(env, estimator):
     stats = sarsa(env, estimator, max_episodes=3000, render=True)
@@ -13,8 +13,8 @@ env = gym.envs.make("LunarLander-v2")
 env.name = "LunarLander-v2"
 # env = gym.envs.make("CartPole-v1")
 # env.name = "CartPole-v1"
-# env = RocketLander()
-# env.name = "RocketLander"
+# env = BoosterLander()
+# env.name = "BoosterLander"
 
 estimator = NNEstimator(env, 0.001)
 

@@ -3,15 +3,15 @@ from estimators.nnestimator import NNEstimator
 from deep_q import q_learning
 from play import play
 
-from project.environment.rocketlander import RocketLander
+from project.environment.boosterlander import BoosterLander
 
 # env = gym.envs.make("CartPole-v1")
 # env.name = "CartPole-v1"
 # env = gym.envs.make("LunarLander-v2")
 # env.name = "LunarLander-v2"
 
-env = RocketLander()
-env.name = "RocketLander"
+env = BoosterLander()
+env.name = "BoosterLander"
 
 estimator = NNEstimator(env, 0.001)
 

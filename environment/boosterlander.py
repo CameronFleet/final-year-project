@@ -85,7 +85,7 @@ def discretization_actions(Ft_discretization, Alpha_discretization, Fs_discretiz
 
     return actions
 
-class RocketLander(gym.Env, EzPickle):
+class BoosterLander(gym.Env, EzPickle):
     """
     Observation Space
     ( 

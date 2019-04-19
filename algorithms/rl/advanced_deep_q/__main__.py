@@ -6,7 +6,7 @@ from estimators.double_nnestimator import DoubleNNEstimator
 from advanced_deep_q import q_learning
 from play import play
 
-from environment.rocketlander import RocketLander
+from environment.boosterlander import BoosterLander
 parser = argparse.ArgumentParser(prog="advanced-q-learning")
 parser.add_argument('--save-dir', default="default")
 parser.add_argument('--job', default="1")
@@ -26,8 +26,8 @@ if args.l:
     env.name = "LunarLander-v2"
 
 if not args.l:
-    env = RocketLander( moving_goal =False,termination_time=1000)
-    env.name = "RocketLander"
+    env = BoosterLander( moving_goal =False,termination_time=1000)
+    env.name = "BoosterLander"
 
 
 estimator = DoubleNNEstimator(env, 

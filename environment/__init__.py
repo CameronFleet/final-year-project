@@ -1,1 +1,1 @@
-from environment.rocketlander import RocketLander
+from environment.boosterlander import BoosterLander
