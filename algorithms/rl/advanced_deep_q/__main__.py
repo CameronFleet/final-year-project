@@ -6,7 +6,7 @@ from estimators.double_nnestimator import DoubleNNEstimator
 from advanced_deep_q import q_learning
 from play import play
 
-from project.environment.rocketlander import RocketLander
+from environment.rocketlander import RocketLander
 parser = argparse.ArgumentParser(prog="advanced-q-learning")
 parser.add_argument('--save-dir', default="default")
 parser.add_argument('--job', default="1")

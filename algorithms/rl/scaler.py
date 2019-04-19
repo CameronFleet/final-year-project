@@ -1,6 +1,5 @@
 from sklearn.preprocessing import StandardScaler
 import itertools
-from project.util.progress import printProgressBar
 from progress.bar import ShadyBar
 
 def scaler(env, sample_size=500):

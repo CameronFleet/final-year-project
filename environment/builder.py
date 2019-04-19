@@ -2,7 +2,7 @@ import numpy as np
 from Box2D.b2 import (circleShape, edgeShape, fixtureDef, polygonShape,
                       revoluteJointDef)
 
-import project.config as config
+import environment.config as config
 
 sea_level = config.SEA_LEVEL
 

@@ -17,7 +17,7 @@ class PID:
         self.consts     = consts
         self.time_step  = timestep
 
-    def calculate(self, e, de=None, bias = 0):
+    def control_signal(self, e, de=None, bias = 0):
 
         K = self.consts
         self.integral = self.integral + (e* self.time_step)
@@ -35,7 +35,7 @@ class PID:
 # self.altitude_pid   = PID(self.time_step,(-0.24,0,0.5))
 # self.x_pid          = PID(self.time_step,(0.005625,0.028125,0.0075))
 # self.angular_pid    = PID(self.time_step,(25,0,0.1)) 0.0775
-class PIDAlg:
+class Controller:
 
     def __init__(self, timestep, seed, episode_number):
         self.time_step   = timestep
@@ -65,27 +65,25 @@ class PIDAlg:
             for key, value in metrics.items():
                 self.metrics[key].append(value)
 
-    def go(self, state, env): 
+    def action(self, observation, env): 
 
         # State feedback
-        x, y, vx, vy,theta, vtheta, l1, l2 = state
+        x, y, vx, vy,theta, vtheta, l1, l2 = observation
 
-        # FT PID
-        Ft = self.altitude_pid.calculate(env.GOAL[1]-y, de=-vy)
+        # Y-PID
+        Ft = self.altitude_pid.control_signal(env.GOAL[1]-y, de=-vy)
         Ft = 0 if  Ft < 0 else Ft
         Ft = 1 if Ft > 1 else Ft
         if l1 or l2:
             Ft=0
         
-
-        # ALPHA PID
-        goal_direction = 1 if x > 0 else -1
-        alpha = self.x_pid.calculate(x, de=-vx)
+        # X-PID
+        alpha = self.x_pid.control_signal(-x, de=-vx)
         alpha = -0.1 if alpha < -0.1 else alpha
         alpha = 0.1 if alpha > 0.1 else alpha
 
-        # ANGULAR PID
-        Fs = -self.angular_pid.calculate(theta, de=vtheta)
+        # theta-PID
+        Fs = -self.angular_pid.control_signal(theta, de=vtheta)
         Fs = -1 if Fs < -1 else Fs
         Fs = 1 if Fs > 1 else Fs
 
@@ -110,8 +108,8 @@ class PIDAlg:
     def report(self, save=True, onlyControl=False):
 
         if save:
-            os.system("mkdir episodes/episode_"+str(self.episode_number))
-            os.system("touch episodes/episode_"+str(self.episode_number)+"/episode.save")
+            os.system("mkdir pid/saves/save_"+str(self.episode_number))
+            os.system("touch pid/saves/save_"+str(self.episode_number)+"/pid.save")
 
         lims   = {  "Thrust":(0,100,10), 
                     "Alpha":(-0.1, 0.1,0.1), 
@@ -137,7 +135,7 @@ class PIDAlg:
         plt.show()
 
     def _save_metric(self, metric, values):
-        f = open("episodes/episode_"+str(self.episode_number)+"/episode.save", "a")
+        f = open("pid/saves/save_"+str(self.episode_number)+"/pid.save", "a")
         f.write("{METRIC:" + metric + ",VALUES:")
         for i, value in enumerate(values):
             if i == len(values) -1:
@@ -168,11 +166,11 @@ class PIDAlg:
         if isControlSignal:
             plt.title(metric+" vs Time with Kp=" + str(K[0])+ " Ki=" +str(K[1])+ " Kd="+ str(K[2]))
             if save:
-                plt.savefig("episodes/episode_"+str(self.episode_number)+"/p_" +metric+ "_Kp=" + str(K[0])+ "_Ki=" +str(K[1])+ "_Kd="+ str(K[2]) +".png")
+                plt.savefig("pid/saves/save_"+str(self.episode_number)+"/p_" +metric+ "_Kp=" + str(K[0])+ "_Ki=" +str(K[1])+ "_Kd="+ str(K[2]) +".png")
         else:
             plt.title(metric + " vs Time")
             if save:
-                plt.savefig("episodes/episode_"+str(self.episode_number)+"/p_" +metric.split()[0] +".png")
+                plt.savefig("pid/saves/save_"+str(self.episode_number)+"/p_" +metric.split()[0] +".png")
 
  
 

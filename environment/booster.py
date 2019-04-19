@@ -1,5 +1,5 @@
-import project.environment.builder as builder
-import project.config as config
+import environment.builder as builder
+import environment.config as config
 import math
 
 def transform_engine_power(power, fps):

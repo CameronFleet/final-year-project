@@ -1,8 +1,8 @@
 import sys, math
 
-import project.environment.builder as builder
-from project.environment.booster import Booster
-from project.environment.detector import ContactDetector
+import environment.builder as builder
+from environment.booster import Booster
+from environment.detector import ContactDetector
 
 import Box2D
 from Box2D.b2 import circleShape
@@ -11,7 +11,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
 
-import project.config as config
+import environment.config as config
 import time
 
 def drag_force(body, air_density, drag_constant):
@@ -25,12 +25,12 @@ def drag_force(body, air_density, drag_constant):
     drag = (drag_constant*air_density*vel.x*vel.x*Ax) / 2, (drag_constant*air_density*vel.y*vel.y*Ay) / 2
     return drag, cog
 
-def episode_complete(legs, agent, env):
+def episode_complete(legs, booster, env):
     done = False
     reward = None
-    vel = agent.body.linearVelocity
-    pos = agent.body.position
-    angle = agent.body.angle
+    vel = booster.body.linearVelocity
+    pos = booster.body.position
+    angle = booster.body.angle
     
     # Hits the ground
     if env.game_over:
@@ -126,7 +126,7 @@ class RocketLander(gym.Env, EzPickle):
         
         self.world = Box2D.b2World()
         self.terrian = None
-        self.agent = None
+        self.booster = None
         self.particles = []
 
         self.prev_reward = None
@@ -161,8 +161,8 @@ class RocketLander(gym.Env, EzPickle):
         self.world.DestroyBody(self.terrian)
         self.world.DestroyBody(self.pad)
         self.terrian = None
-        self.world.DestroyBody(self.agent.body)
-        self.agent = None
+        self.world.DestroyBody(self.booster.body)
+        self.booster = None
         self.world.DestroyBody(self.legs[0])
         self.world.DestroyBody(self.legs[1])
 
@@ -178,9 +178,7 @@ class RocketLander(gym.Env, EzPickle):
 
         scale = self.np_random.uniform(config.GOAL_MIN_X, config.GOAL_MAX_X) if self.moving_goal else config.GOAL_X_SCALED
         self.GOAL = [W*scale, config.SEA_LEVEL + config.GOAL_H]
-
-
-
+        
         # GENERATE HELIPAD POLES
         self.helipad_x1 = self.GOAL[0] - config.GOAL_W/2
         self.helipad_x2 = self.GOAL[0] + config.GOAL_W/2
@@ -189,13 +187,13 @@ class RocketLander(gym.Env, EzPickle):
         # GENERATE TERRIAN
         self.terrian, self.pad = builder.generate_terrian(self.world, W, H, self.helipad_x1, self.helipad_x2, self.helipad_y)
 
-        # GENERATE AGENT
-        self.agent = Booster(self.world, W, H, self.np_random)
+        # GENERATE booster
+        self.booster = Booster(self.world, W, H, self.np_random)
 
         # GENERATE LEGS
-        self.legs = builder.generate_landing_legs(self.world, W, H, self.agent.body)
+        self.legs = builder.generate_landing_legs(self.world, W, H, self.booster.body)
 
-        self.drawlist = [self.agent.body, self.terrian, self.pad] + self.legs
+        self.drawlist = [self.booster.body, self.terrian, self.pad] + self.legs
         self.steps = 0
 
         return self.step(None)[0]
@@ -234,25 +232,25 @@ class RocketLander(gym.Env, EzPickle):
                 Ft, alpha, Fs = self.actions[action]
         
             if Ft:
-                self.agent.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
+                self.booster.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
             if Fs:
-                self.agent.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
+                self.booster.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
 
-        self._apply_drag(self.agent.body)
+        self._apply_drag(self.booster.body)
 
         self.world.Step(1.0 / config.FPS, 6, 2)
 
         # Update state
-        pos = self.agent.body.position
-        vel = self.agent.body.linearVelocity
+        pos = self.booster.body.position
+        vel = self.booster.body.linearVelocity
 
         state = [
             pos.x - self.GOAL[0],
             pos.y,
             vel.x,
             vel.y,
-            self.agent.body.angle,
-            self.agent.body.angularVelocity,
+            self.booster.body.angle,
+            self.booster.body.angularVelocity,
             1.0 if self.legs[0].ground_contact else 0.0,
             1.0 if self.legs[1].ground_contact else 0.0
         ]
@@ -287,14 +285,14 @@ class RocketLander(gym.Env, EzPickle):
 
         # See if state is done
         # TODO: Test
-        done, completion_reward = episode_complete(self.legs, self.agent, self)    
+        done, completion_reward = episode_complete(self.legs, self.booster, self)    
         if completion_reward is not None:
             reward += completion_reward
             
         return np.array(state, dtype=np.float32), reward, done, {}
 
     def render(self, mode='human'):
-        import project.util.rendering as rendering
+        import util.rendering as rendering
         import pyglet
         from pyglet.window import key
 
@@ -328,9 +326,9 @@ class RocketLander(gym.Env, EzPickle):
 
         # Draw metrics
         self.viewer.draw_fps()
-        self.viewer.draw_metric("V_i", self.agent.body.linearVelocity[0])
-        self.viewer.draw_metric("V_j", self.agent.body.linearVelocity[1])
-        self.viewer.draw_metric("Angle", self.agent.body.angle)
+        self.viewer.draw_metric("V_i", self.booster.body.linearVelocity[0])
+        self.viewer.draw_metric("V_j", self.booster.body.linearVelocity[1])
+        self.viewer.draw_metric("Angle", self.booster.body.angle)
         for metric in self.tracked_metrics:
             self.viewer.draw_metric(metric, self.tracked_metrics[metric])
 
@@ -371,7 +369,7 @@ class RocketLander(gym.Env, EzPickle):
                                     
 
         # Position Indicator               
-        # x,y = self.agent.body.position
+        # x,y = self.booster.body.position
         # s = 1
         # self.viewer.draw_polygon([(x-s,y-s),(x-s,y+s), (x+s, y+s), (x+s, y-s)], color=(0, 0, 0))        
 

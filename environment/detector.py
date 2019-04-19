@@ -11,7 +11,7 @@ class ContactDetector(contactListener):
         If the terrian is involved in any collison then its game over
         """
         if self.env.terrian in [contact.fixtureA.body, contact.fixtureB.body]:
-            if self.env.agent.body in [contact.fixtureA.body, contact.fixtureB.body]:
+            if self.env.booster.body in [contact.fixtureA.body, contact.fixtureB.body]:
                 self.env.game_over = True
                 
             for i in range(2):
@@ -27,7 +27,7 @@ class ContactDetector(contactListener):
                 if self.env.legs[i] in [contact.fixtureA.body, contact.fixtureB.body]:
                     self.env.legs[i].ground_contact = True
 
-            if self.env.agent.body in [contact.fixtureA.body, contact.fixtureB.body]:
+            if self.env.booster.body in [contact.fixtureA.body, contact.fixtureB.body]:
                 self.env.game_over = True
 
     def EndContact(self, contact):

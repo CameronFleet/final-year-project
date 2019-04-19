@@ -31,18 +31,18 @@ class TestEnvironment(object):
         return _make_env
 
     @pytest.fixture
-    def make_agent(self):
+    def make_booster(self):
 
-        def _make_agent(awake):
+        def _make_booster(awake):
             body = lambda: None
             body.awake = awake
 
-            agent = lambda: None
-            agent.body = body
+            booster = lambda: None
+            booster.body = body
             
-            return agent
+            return booster
 
-        return _make_agent
+        return _make_booster
 
     # drag_force
     def test_drag_force_smallest_area(self, make_body):
@@ -68,35 +68,35 @@ class TestEnvironment(object):
         assert expected_drag == drag and expected_cog == cog
 
     # episode_complete
-    def test_episode_complete_from_game_over_success(self, make_env, make_agent):
+    def test_episode_complete_from_game_over_success(self, make_env, make_booster):
         env   = make_env(True, False)
-        agent = make_agent(False)
+        booster = make_booster(False)
 
-        done, reward = environment.episode_complete(agent, env)
+        done, reward = environment.episode_complete(booster, env)
 
         assert done == True and reward == 100
 
-    def test_episode_complete_from_game_over_failure(self, make_env, make_agent):
+    def test_episode_complete_from_game_over_failure(self, make_env, make_booster):
         env   = make_env(True, False)
-        agent = make_agent(True)
+        booster = make_booster(True)
 
-        done, reward = environment.episode_complete(agent, env)
+        done, reward = environment.episode_complete(booster, env)
 
         assert done == True and reward == -100
 
-    def test_episode_complete_from_game_over_forced(self, make_env, make_agent):
+    def test_episode_complete_from_game_over_forced(self, make_env, make_booster):
         env   = make_env(False, True)
-        agent = make_agent(False)
+        booster = make_booster(False)
 
-        done, reward = environment.episode_complete(agent, env)
+        done, reward = environment.episode_complete(booster, env)
 
         assert done == True and reward == 0
 
-    def test_episode_complete_episode_continues(self, make_env, make_agent):
+    def test_episode_complete_episode_continues(self, make_env, make_booster):
         env   = make_env(False, False)
-        agent = make_agent(True)
+        booster = make_booster(True)
 
-        done, reward = environment.episode_complete(agent, env)
+        done, reward = environment.episode_complete(booster, env)
 
         assert done == False and reward == None
 

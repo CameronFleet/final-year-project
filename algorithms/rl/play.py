@@ -5,7 +5,7 @@ import gym
 from estimators.nnestimator import NNEstimator
 from estimators.fixed_nnestimator import FixedNNEstimator
 from estimators.double_nnestimator import DoubleNNEstimator
-from project.environment.rocketlander import RocketLander
+from environment.rocketlander import RocketLander
 import time
 
 def play(env, estimator, debug=False):
@@ -39,6 +39,7 @@ def test(env, estimator, n= 100):
         print("Iteration {} , Reward {}".format(i, reward))
 
     return total/n
+    
 if __name__ == '__main__':
     # env = gym.envs.make("CartPole-v1")
     # env.name = "CartPole-v1"
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     # env.name = "LunarLander-v2"
 
     estimator = DoubleNNEstimator(env,loaded=True)
-    estimator.load("/Users/cameronfleet/Desktop/blh_25n_5000e_5bl_00005lr/vbl_23/RocketLander_BEST_PERFORMING_219")
+    estimator.load("/Users/cameronfleet/Desktop/eval/weights/bl_5n_5000e_100ut_noisy/4/BEST_210")
 
 
     print(test(env, estimator))

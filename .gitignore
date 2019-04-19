@@ -10,3 +10,8 @@ environment/__pycache__/
 episodes/*
 episodes.log
 project/algorithms/rl/weights/
+*.ipynb
+.pytest_cache/*
+.gitignore
+algorithms/pid/saves/*
+algorithms/rl/weights/*
