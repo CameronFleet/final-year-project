@@ -212,15 +212,25 @@ class BoosterLander(gym.Env, EzPickle):
     def _apply_drag(self, body):
         drag, cog = drag_force(body, config.SEA_LEVEL_DENSITY, 0.75)
         body.ApplyForce((drag[0], drag[1]), (cog.x, cog.y), False)
-        self._record_metrics({"dragForce.x": drag[0], "dragForce.y": drag[1]})
+        self._record_metrics({"dragForce_x": drag[0], "dragForce_y": drag[1]})
 
-    def _record_metrics(self, metrics):
-        for metric in metrics.keys():
-            self.tracked_metrics[metric] = metrics[metric]
+    def _record_metrics(self, metrics, group=None):
+        if group is None:
+            if "misc" in self.tracked_metrics: 
+                self.tracked_metrics["misc"] = {**self.tracked_metrics["misc"], **metrics}
+            else:
+                self.tracked_metrics["misc"] = metrics
+        else: 
+            if group in self.tracked_metrics: 
+                self.tracked_metrics[group] = {**self.tracked_metrics[group], **metrics}
+            else:
+                self.tracked_metrics[group] = metrics
+
+
 
     def step(self, action):
-
         self.steps += 1
+        self.tracked_metrics = {}
 
         if self.user_action != (0,0,0):
             action = self.user_action
@@ -234,7 +244,7 @@ class BoosterLander(gym.Env, EzPickle):
             if Ft:
                 self.booster.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
             if Fs:
-                self.booster.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle)
+                self.booster.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle, self._record_metrics)
 
         self._apply_drag(self.booster.body)
 
@@ -254,8 +264,15 @@ class BoosterLander(gym.Env, EzPickle):
             1.0 if self.legs[0].ground_contact else 0.0,
             1.0 if self.legs[1].ground_contact else 0.0
         ]
+        self._record_metrics({"x":state[0],
+                        "y":state[1],
+                        "vx":state[2],
+                        "vy":state[3],
+                        "theta":state[4],
+                        "vtheta":state[5],
+                        "leg_left":state[6],
+                        "leg_right":state[7]}, "observation")
         assert len(state) == 8
-
         
         """
         REWARD SCHEMES
@@ -291,7 +308,7 @@ class BoosterLander(gym.Env, EzPickle):
             
         return np.array(state, dtype=np.float32), reward, done, {}
 
-    def render(self, mode='human'):
+    def render(self, metrics=True, mode='human'):
         import util.rendering as rendering
         import pyglet
         from pyglet.window import key
@@ -326,11 +343,12 @@ class BoosterLander(gym.Env, EzPickle):
 
         # Draw metrics
         self.viewer.draw_fps()
-        self.viewer.draw_metric("V_i", self.booster.body.linearVelocity[0])
-        self.viewer.draw_metric("V_j", self.booster.body.linearVelocity[1])
-        self.viewer.draw_metric("Angle", self.booster.body.angle)
-        for metric in self.tracked_metrics:
-            self.viewer.draw_metric(metric, self.tracked_metrics[metric])
+
+        if metrics:
+            for group in self.tracked_metrics:
+                self.viewer.draw_heading(group)
+                for metric in self.tracked_metrics[group]:
+                    self.viewer.draw_metric(metric, self.tracked_metrics[group][metric])
 
         # Degrade exhaust
         for obj in self.particles:

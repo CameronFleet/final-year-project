@@ -11,7 +11,7 @@ controller = Controller(1/config.FPS, env.seed, episode_number)
 
 max_step = 4000
 render   = True
-report   = True
+report   = False
 
 step = 0 
 action = (0,0,0)
@@ -32,7 +32,7 @@ while True:
         action = None
 
     if render:
-        env.render()
+        env.render(metrics=True)
 
     if done: 
         action = None

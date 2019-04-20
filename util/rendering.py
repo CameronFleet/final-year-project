@@ -40,7 +40,7 @@ def get_display(spec):
 class Viewer(object):
     def __init__(self, width, height, display=None):
         display = get_display(display)
-
+        self.font = "CMU Typewriter Text"
         self.width = width
         self.height = height
         self.window = pyglet.window.Window(width=width, height=height, display=display)
@@ -56,9 +56,12 @@ class Viewer(object):
         self.fps = 60
 
         self.metrics = 1
+        self.metric_height = self.height - 25
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
+        pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
 
     def close(self):
         self.window.close()
@@ -103,8 +106,38 @@ class Viewer(object):
         for geom in self.onetime_geoms:
             geom.render()
         self.transform.disable()
+
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS,
+                     ('v2f', (self.width-300, self.height-10,        # point0
+                              self.width-300, self.height-(35*(len(self.text_list)/2) ),        # point1
+                              self.width-10, self.height-(35*(len(self.text_list)/2) ),        # point2
+                              self.width-10, self.height-10)        # point3
+                     ),
+                     ('c4B', (244, 244, 244, 70, # color for point0
+                              244, 244, 244, 70, # color for point1
+                              244, 244, 244, 70, # color for point2
+                              244, 244, 244, 70) # color for point3
+                     )
+                    )
+
+        # render the metrics to screen
+        text_batch = pyglet.graphics.Batch()
+
         for obj in self.text_list:
-            obj.draw()
+            if isinstance(obj, tuple):
+                heading, color, height = obj
+                pyglet.text.Label(heading,
+                          font_size=25,
+                          font_name=self.font,
+                          color=color,
+                          x=self.width-150, y=height,
+                          anchor_x='center', anchor_y='center', batch = text_batch)
+            else:
+                obj.batch = text_batch
+
+        text_batch.draw()
+        self.metric_height = self.height
+
         arr = None
         if return_rgb_array:
             buffer = pyglet.image.get_buffer_manager().get_color_buffer()
@@ -128,27 +161,45 @@ class Viewer(object):
     def draw_fps(self):
         self.draw_metric("FPS", self.fps, color=(255,255,0,255))
 
-    def draw_text(self, text, value=None, pos=(0,0), size=20, color=(0,0,0,255)):
+    def draw_text(self, text, value=None, pos=(0,0), size=15, color=(0,0,0,255)):
 
         display_text = ""
 
         if value is None:
             display_text = text
         else:
-            display_text = text + ": " + str(value)
+            display_text = "{} [{}]".format(text, value)
 
-        text = pyglet.text.Label(display_text,
+        text = pyglet.text.Label(text,
                           font_size=size,
-                          font_name="Roboto",
+                          font_name=self.font,
                           color=color,
                           x=pos[0], y=pos[1],
-                          anchor_x='center', anchor_y='center')
+                          anchor_x='left', anchor_y='center')
+
+        value = pyglet.text.Label(str(value),
+                          font_size=size,
+                          font_name=self.font,
+                          color=(10,100,10,255) if value > 0 else (230,30,30,255),
+                          x=self.width-20, y=pos[1],
+                          anchor_x='right', anchor_y='center')
+
+
         self.add_textlist(text)
+        self.add_textlist(value)
+
         return text
 
     def draw_metric(self, label, value, color=(0,0,0,255)):
         self.metrics += 1
-        return self.draw_text(label, round(value,2), pos=(self.width-100,self.height-(30*self.metrics)), color= color)
+        self.metric_height -= 25
+        return self.draw_text(label, round(value,2), pos=(self.width-290,self.metric_height), color= color)
+
+    def draw_heading(self, heading, color=(0,0,0,255)):
+        self.metric_height -= 35
+        self.add_textlist((heading, color, self.metric_height))
+        self.metric_height -= 10
+
 
     def draw_circle(self, radius=10, res=30, filled=True, **attrs):
         geom = make_circle(radius=radius, res=res, filled=filled)

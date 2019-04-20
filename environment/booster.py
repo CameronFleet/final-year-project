@@ -43,14 +43,14 @@ class Booster:
             p.coldGas = False  
 
             Fx, Fy = engine_impulse(self.MAIN_ENGINE_POWER * m_power, self.body.angle, alpha, dispersion)
-            record_metrics({"Fx":Fx, "Fy":Fy, "Ft":math.sqrt(Fx*Fx + Fy*Fy)})
+            record_metrics({"Ft":math.sqrt(Fx*Fx + Fy*Fy), "alpha":alpha}, "actions")
 
             p.ApplyLinearImpulse((-Fx, -Fy), impulse_pos,True)
             self.body.ApplyLinearImpulse((Fx, Fy),
                                             impulse_pos, True)
             return Fx, Fy, impulse_pos
 
-    def fireSideEngine(self, s_power, direction, create_particle):
+    def fireSideEngine(self, s_power, direction, create_particle, record_metrics):
 
         dispersion = self.np_random.uniform(-0.1, +0.1)
         impulse_pos = side_engine_impulse_position(self.body, direction, config.SIDE_ENGINE_HEIGHT, config.SIDE_ENGINE_AWAY)
@@ -64,6 +64,8 @@ class Booster:
                                     dispersion=dispersion, 
                                     orientation=math.pi/2)
 
+            record_metrics({"Fs":math.sqrt(Fx*Fx + Fy*Fy)},"actions")
+            
             p.ApplyLinearImpulse((Fx, Fy), impulse_pos, True)
             self.body.ApplyLinearImpulse((-Fx, -Fy), impulse_pos, True)
 
