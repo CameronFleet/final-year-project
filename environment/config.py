@@ -52,5 +52,9 @@ LEG_SPRING_TORQUE = 10
 # (m/s)
 START_VELOCITY = (0,-80)
 
-# Randomness factor
-INITIAL_RANDOM = 15000.0  # Set 1500 to make game harder
+# Sensor failure probabilies
+ACCELEROMETER_FAILURE_CHANCE = 0.9
+GPS_FAILURE_CHANCE = 0.5
+ROLL_FAILURE_CHANCE = 0.5
+SIDE_BOOSTER_FAILURE_CHANCE = 0.5
+

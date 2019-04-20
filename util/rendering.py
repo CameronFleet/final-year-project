@@ -109,8 +109,8 @@ class Viewer(object):
 
         pyglet.graphics.draw(4, pyglet.gl.GL_QUADS,
                      ('v2f', (self.width-300, self.height-10,        # point0
-                              self.width-300, self.height-(35*(len(self.text_list)/2) ),        # point1
-                              self.width-10, self.height-(35*(len(self.text_list)/2) ),        # point2
+                              self.width-300, self.height-(33*(len(self.text_list)/2) ),        # point1
+                              self.width-10, self.height-(33*(len(self.text_list)/2) ),        # point2
                               self.width-10, self.height-10)        # point3
                      ),
                      ('c4B', (244, 244, 244, 70, # color for point0

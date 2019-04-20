@@ -21,16 +21,23 @@ def side_engine_impulse_position(body, direction, engine_height, engine_away):
                 + direction*(engine_away/2)*math.sin(body.angle))
 
 class Booster:
-    def __init__(self, world, W, H, np_random):
+    def __init__(self, world, W, H, failed_side_thrusters, initial_random, np_random):
         self.body = builder.generate_booster(world, W, H, np_random)
         self.body.diameter  = config.LANDER_DIAMETER
         self.body.height    = config.LANDER_HEIGHT
         self.np_random = np_random
         self.MAIN_ENGINE_POWER = transform_engine_power(config.MAIN_ENGINE_POWER, config.FPS)
         self.SIDE_ENGINE_POWER = transform_engine_power(config.SIDE_ENGINE_POWER, config.FPS)
+
+        if failed_side_thrusters:
+            self.right_thruster_failed = bool(np_random.choice(2,1)[0])
+            print(self.right_thruster_failed)
+        else:
+            self.right_thruster_failed = None
+
         self.body.ApplyForceToCenter((
-        np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM)*1000,
-        np_random.uniform(-config.INITIAL_RANDOM, config.INITIAL_RANDOM)*1000
+        np_random.uniform(-initial_random, initial_random)*1000,
+        np_random.uniform(-initial_random, initial_random)*1000
         ), True)
 
     def fireMainEngine(self, m_power, alpha, create_particle, record_metrics):
@@ -52,6 +59,16 @@ class Booster:
 
     def fireSideEngine(self, s_power, direction, create_particle, record_metrics):
 
+        if self.right_thruster_failed is not None:
+            if self.right_thruster_failed:
+                if direction > 0:
+                    record_metrics({"Fs":0},"actions")
+                    return None
+            else:
+                if direction < 0:
+                    record_metrics({"Fs":0},"actions")
+                    return None
+        
         dispersion = self.np_random.uniform(-0.1, +0.1)
         impulse_pos = side_engine_impulse_position(self.body, direction, config.SIDE_ENGINE_HEIGHT, config.SIDE_ENGINE_AWAY)
 

@@ -1,1 +1,8 @@
 from environment.boosterlander import BoosterLander
+from environment.boosterlander import BoosterLanderContinuous
+
+from environment.noisyboosterlander import NoisyBoosterLander
+from environment.noisyboosterlander import NoisyBoosterLanderContinuous
+
+from environment.brokenboosterlander import BrokenBoosterLander
+from environment.brokenboosterlander import BrokenBoosterLanderContinuous
