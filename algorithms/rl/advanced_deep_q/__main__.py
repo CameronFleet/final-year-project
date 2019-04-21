@@ -6,7 +6,8 @@ from estimators.double_nnestimator import DoubleNNEstimator
 from advanced_deep_q import q_learning
 from play import play
 
-from environment.boosterlander import BoosterLander
+from environment import BoosterLander, NoisyBoosterLander, BrokenBoosterLander
+
 parser = argparse.ArgumentParser(prog="advanced-q-learning")
 parser.add_argument('--save-dir', default="default")
 parser.add_argument('--job', default="1")
@@ -18,16 +19,26 @@ parser.add_argument('--batch-size', default=5, type=int)
 parser.add_argument('--update-target', default=10000, type=int)
 
 parser.add_argument('-l', default=False, action='store_const', const=True)
+parser.add_argument('-n', default=False, action='store_const', const=True)
+parser.add_argument('-b', default=False, action='store_const', const=True)
+
+
 
 args = parser.parse_args(sys.argv[1:])
 
 if args.l:
     env = gym.envs.make("LunarLander-v2")
     env.name = "LunarLander-v2"
-
-if not args.l:
+elif args.n:
+    env = NoisyBoosterLander( moving_goal =False,termination_time=1000)
+    env.name = "BoosterLander"
+elif args.b:
+    env = BrokenBoosterLander( moving_goal =False,termination_time=1000)
+    env.name = "BoosterLander"
+else:
     env = BoosterLander( moving_goal =False,termination_time=1000)
     env.name = "BoosterLander"
+
 
 
 estimator = DoubleNNEstimator(env, 

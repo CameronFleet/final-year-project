@@ -5,7 +5,7 @@ import gym
 from estimators.nnestimator import NNEstimator
 from estimators.fixed_nnestimator import FixedNNEstimator
 from estimators.double_nnestimator import DoubleNNEstimator
-from environment.boosterlander import BoosterLander
+from environment import BoosterLander, NoisyBoosterLander, BrokenBoosterLander
 import time
 
 def play(env, estimator, debug=False):
@@ -17,7 +17,7 @@ def play(env, estimator, debug=False):
 
     while not done:
         state, reward, done, _ = env.step(action)
-        env.render()
+        env.render(metrics=True)
 
         if debug:
             print(state[0])
@@ -43,13 +43,13 @@ def test(env, estimator, n= 100):
 if __name__ == '__main__':
     # env = gym.envs.make("CartPole-v1")
     # env.name = "CartPole-v1"
-    env = BoosterLander(time_terminated=True, moving_goal=False)
+    env = BrokenBoosterLander(time_terminated=True, moving_goal=False)
     env.name = "BoosterLander"
     # env = gym.envs.make("LunarLander-v2")
     # env.name = "LunarLander-v2"
 
     estimator = DoubleNNEstimator(env,loaded=True)
-    estimator.load("/Users/cameronfleet/Desktop/eval/weights/bl_5n_5000e_100ut_noisy/4/BEST_210")
+    estimator.load("/Users/cameronfleet/Desktop/eval/new_reward_weights2/weights/bl_noisy_new_reward/9/BEST_248")
 
 
     print(test(env, estimator))

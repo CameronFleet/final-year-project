@@ -11,6 +11,9 @@ class Sensor:
 
 
     def sense(self): 
+        if self.reading is None:
+            return self.failure_code()
+
         if self.failed:
             return self._sensor_noise() if self.is_noise else self._sensor_systematic() 
         else:

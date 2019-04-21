@@ -18,8 +18,6 @@ import environment.config as config
 import time
 
 
-
-
 def drag_force(body, air_density, drag_constant):
     vel = body.linearVelocity
     cog = body.worldCenter
@@ -47,9 +45,9 @@ def episode_complete(legs, booster, env):
         #          - abs(env.GOAL[0] - pos.x) / 2
 
     # Goes off screen
-    if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
-        done = True
-        reward = -50
+    # if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
+    #     done = True
+    #     reward = -50
 
     # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
@@ -131,6 +129,8 @@ class BoosterLander(gym.Env, EzPickle):
     good_gps = True
     good_rate_sensor = True
     good_side_thrusters = True
+    sensors_in_observation = False
+
 
     def __init__(self, seed=None, time_terminated=True, moving_goal =False, termination_time=1000):
         EzPickle.__init__(self)
@@ -153,9 +153,15 @@ class BoosterLander(gym.Env, EzPickle):
 
         self.np_random, self.seed = seeding.np_random(seed)
 
-        low = np.array([0, 0, -120, -120, -4*math.pi, -4*math.pi, 0, 0])
-        high = np.array([config.WORLD_W, config.WORLD_H, 120, 120, 4*math.pi, 4*math.pi, 1, 1])
-        self.observation_space = spaces.Box(low, high, dtype=np.float32)
+    
+        low = [0, 0, -120, -120, -4*math.pi, -4*math.pi, 0, 0]
+        high = [config.WORLD_W, config.WORLD_H, 120, 120, 4*math.pi, 4*math.pi, 1, 1]
+
+        if self.sensors_in_observation:
+            low += [0,0,0,0]
+            high += [2,2,2,2]
+
+        self.observation_space = spaces.Box(np.array(low), np.array(high), dtype=np.float32)
 
         # self.actions = discretization_actions(1,1,1)
         self.actions = [(0,0,0), (1.0, 0, 0), (1.0, -0.1, 0), (1.0, 0.1, 0), (0,0,-1.0), (0,0,1.0)]
@@ -202,8 +208,12 @@ class BoosterLander(gym.Env, EzPickle):
         self.terrian, self.pad = builder.generate_terrian(self.world, W, H, self.helipad_x1, self.helipad_x2, self.helipad_y)
 
         # GENERATE booster
-        self.failed_side_thrusters = not self.good_side_thrusters and self.np_random.uniform(0,1) < config.SIDE_BOOSTER_FAILURE_CHANCE
-        self.booster = Booster(self.world, W, H, self.failed_side_thrusters, self.initial_random, self.np_random)
+        # self.failed_side_thrusters = not self.good_side_thrusters and self.np_random.uniform(0,1) < config.SIDE_BOOSTER_FAILURE_CHANCE
+        self.side_thrusters_sensor = Sensor(None, 
+                                            self.good_side_thrusters,
+                                            config.SIDE_BOOSTER_FAILURE_CHANCE,
+                                            self.np_random)
+        self.booster = Booster(self.world, W, H, self.side_thrusters_sensor, self.initial_random, self.np_random)
 
         # GENERATE LEGS
         self.legs = builder.generate_landing_legs(self.world, W, H, self.booster.body)
@@ -288,17 +298,26 @@ class BoosterLander(gym.Env, EzPickle):
         vel = Vec2(self.accelerometer.sense())
         pos = Vec2(self.gps.sense())
         roll = self.roll_rate.sense()
-
         state = [
-            pos.x - self.GOAL[0],
-            pos.y,
-            vel.x,
-            vel.y,
-            roll[0],
-            roll[1],
-            1.0 if self.legs[0].ground_contact else 0.0,
-            1.0 if self.legs[1].ground_contact else 0.0
-        ]
+                pos.x - self.GOAL[0],
+                pos.y,
+                vel.x,
+                vel.y,
+                roll[0],
+                roll[1],
+                1.0 if self.legs[0].ground_contact else 0.0,
+                1.0 if self.legs[1].ground_contact else 0.0
+            ]
+
+        if self.sensors_in_observation:
+            state += [
+                self.accelerometer.failure_code(),
+                self.gps.failure_code(),
+                self.roll_rate.failure_code(),
+                self.side_thrusters_sensor.failure_code()
+            ]
+            
+     
         self._record_metrics({"x":state[0],
                         "y":state[1],
                         "vx":state[2],
@@ -308,15 +327,19 @@ class BoosterLander(gym.Env, EzPickle):
                         "leg_left":state[6],
                         "leg_right":state[7]}, "observation")
 
-        assert len(state) == 8
-        
+        if self.sensors_in_observation:
+            assert len(state) == 12
+        else:
+            assert len(state) == 8
+
         """
         REWARD SCHEMES
 
         Shaped reward
 
         """
-        x, y, vx, vy, theta, vtheta, l1, l2 = state
+        x, y, vx, vy, theta, vtheta, l1, l2 = state[0:8]
+
         reward = 0
 
         x_diff = x 
@@ -352,7 +375,7 @@ class BoosterLander(gym.Env, EzPickle):
         self._record_metrics({  "accelerometer failure": self.accelerometer.failure_code(),
                                 "gps failure":self.gps.failure_code(),
                                 "roll rate failure":self.roll_rate.failure_code(),
-                                "side thrusters failure":self.failed_side_thrusters}, "sensors")
+                                "side thrusters failure":self.side_thrusters_sensor.failure_code()}, "observation" if self.sensors_in_observation else "sensors")
         # Create Viewer 
         if self.viewer is None:
             self.viewer = rendering.Viewer(config.VIEWPORT_W, config.VIEWPORT_H)

@@ -18,6 +18,7 @@ class BrokenBoosterLander(NoisyBoosterLander):
     good_gps = False
     good_rate_sensor = False
     good_side_thrusters = False
+    sensors_in_observation = True
 
 
 class BrokenBoosterLanderContinuous(NoisyBoosterLanderContinuous):
@@ -25,7 +26,4 @@ class BrokenBoosterLanderContinuous(NoisyBoosterLanderContinuous):
     good_gps = False
     good_rate_sensor = False
     good_side_thrusters = False
-
-
-def sensor_failure(np_random):
-    return np_random.uniform(-1000,1000), np_random.uniform(-1000,1000)
+    sensors_in_observation = True

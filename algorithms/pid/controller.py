@@ -32,9 +32,9 @@ class PID:
         result = K[0]*e + K[1]*self.integral + K[2]*de + bias
         return result
 
-# self.altitude_pid   = PID(self.time_step,(-0.24,0,0.5))
-# self.x_pid          = PID(self.time_step,(0.005625,0.028125,0.0075))
-# self.angular_pid    = PID(self.time_step,(25,0,0.1)) 0.0775
+#  self.altitude_pid   = PID(self.time_step,(0.375,0.00085,1.91))
+# self.x_pid          = PID(self.time_step,(0.0095,0.000015,0.0775))
+# self.angular_pid    = PID(self.time_step,(15,1.15,9.35))
 class Controller:
 
     def __init__(self, timestep, seed, episode_number):
@@ -68,7 +68,7 @@ class Controller:
     def action(self, observation, env): 
 
         # State feedback
-        x, y, vx, vy,theta, vtheta, l1, l2 = observation
+        x, y, vx, vy,theta, vtheta, l1, l2 = observation[0:8]
 
         # Y-PID
         Ft = self.altitude_pid.control_signal(env.GOAL[1]-y, de=-vy)
@@ -77,7 +77,7 @@ class Controller:
         if l1 or l2:
             Ft=0
         
-        # X-PID
+        # X-PID 
         alpha = self.x_pid.control_signal(-x, de=-vx)
         alpha = -0.1 if alpha < -0.1 else alpha
         alpha = 0.1 if alpha > 0.1 else alpha

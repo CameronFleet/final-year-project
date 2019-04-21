@@ -1,15 +1,15 @@
 import numpy as np
 
 from pid import Controller, record_episode
-from environment import BrokenBoosterLanderContinuous as BoosterLander
+from environment import BoosterLanderContinuous as BoosterLander
 import environment.config as config
 from util import bcolors
 
-env = BoosterLander(time_terminated=False, moving_goal =True)
+env = BoosterLander(time_terminated=False, moving_goal =False)
 episode_number = record_episode(env.seed)
 controller = Controller(1/config.FPS, env.seed, episode_number)
 
-max_step = 4000
+max_step = 10000
 render   = True
 metrics  = True
 report   = False
@@ -25,7 +25,7 @@ while True:
 
     s, r, done, _ = env.step(action)
     cum_reward += r
-    x, y, vx, vy,theta, vtheta, l1, l2 = s
+    x, y, vx, vy,theta, vtheta, l1, l2 = s[0:8]
 
     action = controller.action(s, env)
 

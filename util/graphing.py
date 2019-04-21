@@ -57,7 +57,7 @@ def average_graph(files):
 if __name__ == '__main__':
     files = []
 
-    for i in range(5):
-        files.append('/Users/cameronfleet/Desktop/eval/weights/bl_5n_5000e_100000ut_noisy/{}.txt'.format(i))
+    for i in range(20):
+        files.append('/Users/cameronfleet/Desktop/eval/new_reward_weights2/weights/bl_noisy_new_reward/{}.txt'.format(i))
 
     average_graph(files)
