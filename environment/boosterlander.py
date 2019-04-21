@@ -45,9 +45,9 @@ def episode_complete(legs, booster, env):
         #          - abs(env.GOAL[0] - pos.x) / 2
 
     # Goes off screen
-    # if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
-    #     done = True
-    #     reward = -50
+    if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
+        done = True
+        reward = -50
 
     # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
@@ -338,17 +338,19 @@ class BoosterLander(gym.Env, EzPickle):
         Shaped reward
 
         """
-        x, y, vx, vy, theta, vtheta, l1, l2 = state[0:8]
-
         reward = 0
 
-        x_diff = x 
-        y_diff = y - self.GOAL[1]
+        vel = booster.body.linearVelocity
+        pos = booster.body.position
+        angle = booster.body.angle
+
+        x_diff = pos.x - self.GOAL[0] 
+        y_diff = pos.y - self.GOAL[1]
 
         shaping = \
             -0.5*np.sqrt(x_diff*x_diff + y_diff*y_diff) \
-            -np.sqrt(vx*vx + vy*vy) \
-            -100*abs(theta) 
+            -np.sqrt(vel.x*vel.x + vel.y*vel.y) \
+            -100*abs(angle) 
 
         if self.prev_shaping is not None: 
             reward = shaping - self.prev_shaping
@@ -357,7 +359,6 @@ class BoosterLander(gym.Env, EzPickle):
 
         if action is not None:
             reward -= 0.1*Ft
-
 
         # See if state is done
         # TODO: Test
