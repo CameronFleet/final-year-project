@@ -52,7 +52,9 @@ def episode_complete(legs, booster, env):
     # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
         done = True
-        reward = +100 - 3*abs(vel.length)
+        reward = +200 - 5*abs(vel.length)
+        # Was 50 - abs(vel)
+        # Was 100 -3abs(vel)
         # reward = +100 - abs(vel.length) \
         #                - abs(angle)*5 \
         #                - abs(env.GOAL[0] - pos.x) / 2
@@ -64,7 +66,7 @@ def episode_complete(legs, booster, env):
 
     # Running for too long!
     if env.steps > env.termination_time and env.time_terminated:
-        reward = -50
+        reward = -100 #Was 50
         done = True
 
     return done, reward
@@ -340,9 +342,9 @@ class BoosterLander(gym.Env, EzPickle):
         """
         reward = 0
 
-        vel = booster.body.linearVelocity
-        pos = booster.body.position
-        angle = booster.body.angle
+        vel = self.booster.body.linearVelocity
+        pos = self.booster.body.position
+        angle = self.booster.body.angle
 
         x_diff = pos.x - self.GOAL[0] 
         y_diff = pos.y - self.GOAL[1]
@@ -358,7 +360,7 @@ class BoosterLander(gym.Env, EzPickle):
         self.prev_shaping = shaping
 
         if action is not None:
-            reward -= 0.1*Ft
+            reward -= 0.3*Ft #was 0.1
 
         # See if state is done
         # TODO: Test
