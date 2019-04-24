@@ -1,0 +1,4 @@
+from algorithms.rl.estimators.nnestimator import NNEstimator
+from algorithms.rl.estimators.fixed_nnestimator import FixedNNEstimator
+from algorithms.rl.estimators.double_nnestimator import DoubleNNEstimator
+from algorithms.rl.estimators.sgd_estimator import SGDEstimator

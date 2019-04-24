@@ -17,20 +17,14 @@ from gym.utils import seeding, EzPickle
 import environment.config as config
 import time
 
+from environment.physics import drag_force, impulse  
+from util import discretization_actions
 
-def drag_force(body, air_density, drag_constant):
-    vel = body.linearVelocity
-    cog = body.worldCenter
-    Ay = body.diameter * (abs(body.diameter*math.cos(body.angle)) 
-                                    + abs(body.height*math.sin(body.angle)))
-    Ax = body.diameter * (abs(body.diameter*math.sin(body.angle)) 
-                                    + abs(body.height*math.cos(body.angle)))
-
-    drag = (drag_constant*air_density*vel.x*vel.x*Ax) / 2, (drag_constant*air_density*vel.y*vel.y*Ay) / 2
-    return drag, cog
 
 def episode_complete(legs, booster, env):
     done = False
+    landed = None
+    imp = None
     reward = None
     vel = booster.body.linearVelocity
     pos = booster.body.position
@@ -39,25 +33,25 @@ def episode_complete(legs, booster, env):
     # Hits the ground
     if env.game_over:
         done = True
+        landed = False
         reward = -50 - abs(vel.length)
-        # reward = - abs(vel.length) \
-        #          - abs(angle)*5 \
-        #          - abs(env.GOAL[0] - pos.x) / 2
+        imp = impulse(booster.body)
 
     # Goes off screen
     if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
         done = True
+        landed = False
         reward = -50
 
     # Touchdown
     if legs[0].ground_contact and legs[1].ground_contact :
         done = True
+        landed = True
         reward = +200 - 5*abs(vel.length)
+        imp = impulse(booster.body)
+
         # Was 50 - abs(vel)
         # Was 100 -3abs(vel)
-        # reward = +100 - abs(vel.length) \
-        #                - abs(angle)*5 \
-        #                - abs(env.GOAL[0] - pos.x) / 2
 
     # Manual termination    
     if env.done: 
@@ -67,29 +61,11 @@ def episode_complete(legs, booster, env):
     # Running for too long!
     if env.steps > env.termination_time and env.time_terminated:
         reward = -100 #Was 50
+        landed = False
         done = True
 
-    return done, reward
+    return done, landed, imp, reward
 
-def discretization_actions(Ft_discretization, Alpha_discretization, Fs_discretization):
-    actions = []
-    Ft_bounds = 0, 1.0
-    alpha_bounds = -0.1, 0.1
-    Fs_bounds = -1.0, 1.0
-
-    for Ft in np.arange(Ft_bounds[0], Ft_bounds[1] + 0.001 , Ft_bounds[1]/Ft_discretization):
-
-        if Ft != 0:
-            for alpha in np.arange(alpha_bounds[0], alpha_bounds[1] + 0.001 , alpha_bounds[1]/Alpha_discretization):
-                for Fs in np.arange(Fs_bounds[0], Fs_bounds[1] + 0.001, Fs_bounds[1]/Fs_discretization):
-                    actions.append((Ft, alpha, Fs))
-
-        if Ft == 0:
-            for Fs in np.arange(Fs_bounds[0], Fs_bounds[1] + 0.001, Fs_bounds[1]/Fs_discretization):
-                actions.append((Ft, 0, Fs))
-
-
-    return actions
 
 class BoosterLander(gym.Env, EzPickle):
     """
@@ -140,6 +116,7 @@ class BoosterLander(gym.Env, EzPickle):
         self.viewer = None
         
         self.world = Box2D.b2World()
+        self.T = config.FPS
         self.terrian = None
         self.booster = None
         self.particles = []
@@ -284,17 +261,21 @@ class BoosterLander(gym.Env, EzPickle):
         
             if Ft:
                 self.booster.fireMainEngine(Ft, alpha, self._create_particle, self._record_metrics)
-            else: 
-                self._record_metrics({"Ft":0, "alpha":alpha}, "actions")
+            else:
+                Ft = 0 
+                self._record_metrics({"Ft":Ft, "alpha":alpha}, "actions")
 
             if Fs:
                 self.booster.fireSideEngine(abs(Fs), Fs/abs(Fs), self._create_particle, self._record_metrics)
             else:
-                self._record_metrics({"Fs":0}, "actions")
+                Fs = 0
+                self._record_metrics({"Fs":Fs}, "actions")
+        else:
+            Ft, alpha, Fs = 0, 0, 0
 
         self._apply_drag(self.booster.body)
 
-        self.world.Step(1.0 / config.FPS, 6, 2)
+        self.world.Step(1.0 / self.T, 6, 2)
 
         # Update state
         vel = Vec2(self.accelerometer.sense())
@@ -364,11 +345,19 @@ class BoosterLander(gym.Env, EzPickle):
 
         # See if state is done
         # TODO: Test
-        done, completion_reward = episode_complete(self.legs, self.booster, self)    
+        done, landed, impulse, completion_reward = episode_complete(self.legs, self.booster, self)    
         if completion_reward is not None:
             reward += completion_reward
             
-        return np.array(state, dtype=np.float32), reward, done, {}
+        # Performance metrics used in evaluation
+        performance_metrics = {}
+        performance_metrics['Ft'] = Ft
+        performance_metrics['Fs'] = Fs
+        if done:
+            performance_metrics['landed'] = landed
+            performance_metrics['impulse'] = impulse
+
+        return np.array(state, dtype=np.float32), reward, done, performance_metrics
 
     def render(self, metrics=True, mode='human'):
         import util.rendering as rendering

@@ -1,0 +1,9 @@
+/Users/cameronfleet/Desktop/eval/bl_broken_better_reward_2/bbl_acc0_gps0_rate0_thrust0.5/7/BEST_277
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = 267.17113522969936
+Cold Gas Utilisation = 0.13122861567470387
+Fuel Expenditure = 1392.885483767718
+Impact impulse = 215506.44416809082
+Booster Landed = 0.94
+Fails = 0
+========================================

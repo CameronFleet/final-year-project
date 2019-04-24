@@ -1,0 +1,67 @@
+=== EVAL FOR 150 TESTS OF NoisyBoosterLander USING PID ===
+Total Reward = 271.5998416768973
+Cold Gas Utilisation = 0.0423068317392717
+Fuel Expenditure = 2688.8243982022436
+Impact impulse = 46775.81331253052
+Booster Landed = 1.0
+Fails = 0
+========================================
+
+=== EVAL FOR 150 TESTS OF BoosterLander USING PID ===
+Total Reward = 272.69649077351596
+Cold Gas Utilisation = 0.002701468657521938
+Fuel Expenditure = 2696.491433274095
+Impact impulse = 40602.67391204834
+Booster Landed = 1.0
+Fails = 0
+========================================
+ 
+ACCELEROMETER_PROB = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING PID ===
+Total Reward = 101.80536270119384
+Cold Gas Utilisation = 0.03787206756279607
+Fuel Expenditure = 1864.113618329174
+Impact impulse = 572271.8070793152
+Booster Landed = 0.7466666666666667
+Fails = 33
+========================================
+
+GPS_PROB = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING PID ===
+Total Reward = 66.46799729324712
+Cold Gas Utilisation = 0.07234272888243404
+Fuel Expenditure = 2791.9314566189414
+Impact impulse = 67443.72344970703
+Booster Landed = 0.6266666666666667
+Fails = 55
+========================================
+
+ROLL_FAILURE_CHANCE = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING PID ===
+Total Reward = -655.5211995526572
+Cold Gas Utilisation = 0.15687195458150438
+Fuel Expenditure = 1800.976975626539
+Impact impulse = 1781791.5840148926
+Booster Landed = 0.0
+Fails = 4
+========================================
+
+SIDE_BOOSTER_FAILURE_CHANCE = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING PID ===
+Total Reward = -573.3918904274494
+Cold Gas Utilisation = 0.805923053045928
+Fuel Expenditure = 2052.2090551677693
+Impact impulse = 1822051.1126708984
+Booster Landed = 0.0
+Fails = 0
+========================================
+
+ALL=0.1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING PID ===
+Total Reward = 121.80405589634918
+Cold Gas Utilisation = 0.10622368843575808
+Fuel Expenditure = 2507.575690628765
+Impact impulse = 305276.2113952637
+Booster Landed = 0.82
+Fails = 4
+========================================

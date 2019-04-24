@@ -1,0 +1,67 @@
+=== EVAL FOR 150 TESTS OF BoosterLander USING DDQN ===
+Total Reward = 302.9549808268823
+Cold Gas Utilisation = 0.027036366175468788
+Fuel Expenditure = 1666.9389039780533
+Impact impulse = 89408.99761199951
+Booster Landed = 1.0
+Fails = 0
+========================================
+
+=== EVAL FOR 150 TESTS OF NoisyBoosterLander USING DDQN ===
+Total Reward = 298.3165279292665
+Cold Gas Utilisation = 0.14538189137885163
+Fuel Expenditure = 1661.7131400701114
+Impact impulse = 103515.98836898804
+Booster Landed = 1.0
+Fails = 0
+========================================
+
+ACCELEROMETER_FAILURE_CHANCE =1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = 23.8570440638945
+Cold Gas Utilisation = 0.09011437382295832
+Fuel Expenditure = 1094.6579190672164
+Impact impulse = 1121984.2353725433
+Booster Landed = 0.8733333333333333
+Fails = 13
+========================================
+
+GPS_FAILURE_CHANCE =1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = 121.1577801962832
+Cold Gas Utilisation = 0.14362049614544597
+Fuel Expenditure = 981.765462124676
+Impact impulse = 844131.4158439636
+Booster Landed = 0.9533333333333334
+Fails = 0
+========================================
+
+ROLL_FAILURE_CHANCE = 1
+=========================================== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = -122.94514388169522
+Cold Gas Utilisation = 0.29167243855334013
+Fuel Expenditure = 104.39560417619265
+Impact impulse = 1282651.3846588135
+Booster Landed = 0.22
+Fails = 0
+========================================
+
+SIDE_BOOSTER_FAILURE_CHANCE = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = 195.61041265742472
+Cold Gas Utilisation = 0.24693281846599766
+Fuel Expenditure = 1534.2603485749135
+Impact impulse = 305944.7937774658
+Booster Landed = 0.76
+Fails = 3
+========================================
+
+ALL = 0.1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = 230.052790781961
+Cold Gas Utilisation = 0.16755185923821095
+Fuel Expenditure = 1423.282675354367
+Impact impulse = 325461.3632965088
+Booster Landed = 0.9133333333333333
+Fails = 0
+========================================

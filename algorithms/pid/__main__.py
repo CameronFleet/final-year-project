@@ -7,11 +7,11 @@ from util import bcolors
 
 env = BoosterLander(time_terminated=False, moving_goal =False)
 episode_number = record_episode(env.seed)
-controller = Controller(1/config.FPS, env.seed, episode_number)
+controller = Controller(env, episode_number)
 
 max_step = 10000
 render   = True
-metrics  = True
+metrics  = False
 report   = False
 
 step = 0 

@@ -25,16 +25,11 @@ class Booster:
         self.body = builder.generate_booster(world, W, H, np_random)
         self.body.diameter  = config.LANDER_DIAMETER
         self.body.height    = config.LANDER_HEIGHT
+        self.mfr = config.MASS_FLOW_RATE
         self.np_random = np_random
         self.MAIN_ENGINE_POWER = transform_engine_power(config.MAIN_ENGINE_POWER, config.FPS)
         self.SIDE_ENGINE_POWER = transform_engine_power(config.SIDE_ENGINE_POWER, config.FPS)
         self.sensor = sensor
-        # if failed_side_thrusters:
-        #     self.right_thruster_failed = bool(np_random.choice(2,1)[0])
-        #     print(self.right_thruster_failed)
-        # else:
-        #     self.right_thruster_failed = None
-
 
         self.body.ApplyForceToCenter((
         np_random.uniform(-initial_random, initial_random)*1000,

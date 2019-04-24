@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-def read_file(filename, key_pos = 0, value_pos = 2):
+def read_file(filename, key_pos = 0, value_pos = 1):
     f = open(filename, 'r')
 
     keys = []
@@ -13,7 +13,7 @@ def read_file(filename, key_pos = 0, value_pos = 2):
     f.close()
     return keys, values
 
-def smoothed_plot(x, rewards, window_size = 20):
+def smoothed_plot(x, rewards, window_size = 50):
     
     y = []
     for i in range(len(rewards)):
@@ -24,7 +24,7 @@ def smoothed_plot(x, rewards, window_size = 20):
     
     
     plt.plot(x, y)
-    plt.xlabel("episode")
+    plt.xlabel("episodes")
     plt.ylabel("reward")
     plt.show()
 
@@ -58,6 +58,6 @@ if __name__ == '__main__':
     files = []
 
     for i in range(20):
-        files.append('/Users/cameronfleet/Desktop/eval/new_reward_weights2/weights/bl_noisy_new_reward/{}.txt'.format(i))
+        files.append('/Users/cameronfleet/Desktop/eval/bl_broken_better_reward_2/bbl_acc0.5_gps0_rate0_thrust0/{}.txt'.format(i))
 
     average_graph(files)

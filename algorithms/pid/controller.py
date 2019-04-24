@@ -37,13 +37,14 @@ class PID:
 # self.angular_pid    = PID(self.time_step,(15,1.15,9.35))
 class Controller:
 
-    def __init__(self, timestep, seed, episode_number):
-        self.time_step   = timestep
+    def __init__(self, env, episode_number=""):
+        self.env = env
+        self.time_step   = 1 / env.T
         self.altitude_pid   = PID(self.time_step,(0.375,0.00085,1.91))
         self.x_pid          = PID(self.time_step,(0.0095,0.000015,0.0775))
         self.angular_pid    = PID(self.time_step,(15,1.15,9.35))
         self.times         = [0] 
-        self.seed          = seed
+        self.seed          = env.seed
         self.episode_number = episode_number
 
         self.metrics = {"Horizontal_Displacement (m)":[], 
@@ -65,13 +66,18 @@ class Controller:
             for key, value in metrics.items():
                 self.metrics[key].append(value)
 
-    def action(self, observation, env): 
+    def reset(self):
+        self.altitude_pid   = PID(self.time_step,(0.375,0.00085,1.91))
+        self.x_pid          = PID(self.time_step,(0.0095,0.000015,0.0775))
+        self.angular_pid    = PID(self.time_step,(15,1.15,9.35))
+
+    def action(self, observation): 
 
         # State feedback
         x, y, vx, vy,theta, vtheta, l1, l2 = observation[0:8]
 
         # Y-PID
-        Ft = self.altitude_pid.control_signal(env.GOAL[1]-y, de=-vy)
+        Ft = self.altitude_pid.control_signal(self.env.GOAL[1]-y, de=-vy)
         Ft = 0 if  Ft < 0 else Ft
         Ft = 1 if Ft > 1 else Ft
         if l1 or l2:

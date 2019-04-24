@@ -1,7 +1,7 @@
 import sys
 sys.path.append("/Users/cameronfleet/Desktop/University/PROJECT/dev/")
 
-from pid.controller import Controller
+from algorithms.pid.controller import Controller
 def record_episode(seed):
     f = open("pid/save.log")
     episode_number = len(f.readlines())

@@ -49,8 +49,7 @@ if __name__ == '__main__':
     # env.name = "LunarLander-v2"
 
     estimator = DoubleNNEstimator(env,loaded=True)
-    estimator.load("/Users/cameronfleet/Desktop/eval/new_reward_weights2/weights/bl_noisy_new_reward/9/BEST_248")
-
+    estimator.load("/Users/cameronfleet/Desktop/eval/bl_broken_better_reward/bbl_acc0.5_gps0_rate0_thrust0/5/BoosterLander_2000")
 
     print(test(env, estimator))
     # play(env, estimator)

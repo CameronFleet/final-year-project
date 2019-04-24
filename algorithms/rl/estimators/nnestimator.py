@@ -4,11 +4,11 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Dense
 import numpy as np
 import random
-from scaler import scaler
+from algorithms.rl.scaler import scaler
 
 class NNEstimator:
     
-    def __init__(self, env, learning_rate =0.001, first_layer_neurons=32, second_layer_neurons=64):
+    def __init__(self, env, memory_size= 100000, learning_rate =0.001, first_layer_neurons=32, second_layer_neurons=64):
         self.model = keras.Sequential()
         self.model.add(Dense(first_layer_neurons, input_dim=env.observation_space.shape[0], activation='relu'))
         self.model.add(Dense(second_layer_neurons, activation='relu'))
@@ -17,7 +17,7 @@ class NNEstimator:
         self.model.compile(loss='mse',
                            optimizer=Adam(lr=learning_rate))
         
-        self.memory = deque(maxlen=2000)
+        self.memory = deque(memory_size=2000)
         self.scaler = scaler(env)
         
     def q(self, state, action):
@@ -43,7 +43,13 @@ class NNEstimator:
             current = self.model.predict(state)
             current[0][action] = target
             self.model.fit(state, current, epochs=1, verbose=0)
-                                                
+
+    def update_target_network(self):
+        pass
+
+    def update(self, state, action, target):
+        pass       
+
     def save(self, name):
         self.model.save_weights(name)
 

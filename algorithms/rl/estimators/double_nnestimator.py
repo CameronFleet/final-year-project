@@ -4,7 +4,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Dense
 import numpy as np
 import random
-from scaler import scaler
+from algorithms.rl.scaler import scaler
 import pickle
 
 class DoubleNNEstimator:
@@ -59,7 +59,10 @@ class DoubleNNEstimator:
         
     def update_target_network(self):
         self.target_model.set_weights(self.model.get_weights())
-                                                
+
+    def update(self, state, action, target):
+        pass
+
     def save(self, name):
         self.model.save_weights(name+"_weights")
         self.target_model.save_weights(name+"_target_weights")
