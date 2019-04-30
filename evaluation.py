@@ -12,7 +12,6 @@ TO RUN
 #  python evaluation.py -env-n -dqn /Users/cameronfleet/Desktop/eval/best/noisy_and_nominal/BEST_248
 """
 parser = argparse.ArgumentParser(prog="evaluation")
-parser.add_argument('--save-dir', default="default")
 
 parser.add_argument('-r', default=True, action='store_const', const=False, help="Do not render")
 parser.add_argument('-m', default=False, action='store_const', const=True, help="Display metrics on render")
@@ -20,7 +19,8 @@ parser.add_argument('-m', default=False, action='store_const', const=True, help=
 parser.add_argument('-env-n', default=False, action='store_const', const=True, help="Runs on noisy environment")
 parser.add_argument('-env-b', default=False, action='store_const', const=True, help="Runs on broken environment")
 
-parser.add_argument('-dqn', default=False, help="Path to DQN saved estimator")
+parser.add_argument('-e', default="PID", help="Estimator to run")
+parser.add_argument('-p', default="", help="Path to saved estimator")
 
 parser.add_argument('--tests', default=150, help="Number of tests to run when evaluating", type=int)
 parser.add_argument('--save', default=False, help="Path to save results")
@@ -88,37 +88,41 @@ def evaluate(env, action_fn, controller=None):
 if __name__ == '__main__':
 
     if args.env_n:
-        env = NoisyBoosterLander(termination_time=1500) if args.dqn else NoisyBoosterLanderContinuous(termination_time=1500)
+        env = NoisyBoosterLander(termination_time=1500) if not args.e == "PID" else NoisyBoosterLanderContinuous(termination_time=1500)
         env.name = "NoisyBoosterLander"
-   
     elif args.env_b:
-        env = BrokenBoosterLander(termination_time=1500) if args.dqn else BrokenBoosterLanderContinuous(termination_time=1500)
+        env = BrokenBoosterLander(termination_time=1500) if not args.e == "PID" else BrokenBoosterLanderContinuous(termination_time=1500)
         env.name = "BrokenBoosterLander"
     else: 
-        env = BoosterLander(termination_time=1500) if args.dqn else BoosterLanderContinuous(termination_time=1500)
+        env = BoosterLander(termination_time=1500) if not args.e == "PID" else BoosterLanderContinuous(termination_time=1500)
         env.name = "BoosterLander"
 
     controller = None
 
-    print(args.save)
-
-    if args.dqn:
-        estimator = DDQNEstimator(env,loaded=True)
-        alg = "DDQN"
-        estimator.load(args.dqn)
-        action_fn = lambda state: np.argmax(estimator.v(state))
-    else: 
+    if args.e == "PID":
         controller = PIDController(env)
-        alg = "PID"
         action_fn = lambda observation: controller.action(observation)
-
+    elif args.e == "SGD":
+        estimator = SGDEstimator(env,loaded=True)
+        estimator.load(args.p)
+        action_fn = lambda state: np.argmax(estimator.v(state))
+    elif args.e == "DDQN":
+        estimator = DDQNEstimator(env,loaded=True)
+        estimator.load(args.p)
+        action_fn = lambda state: np.argmax(estimator.v(state))
+    elif args.e == "RANDOM":
+        action_fn = lambda _: env.action_space.sample()
+    else:
+        print("INVALID ESTIMATOR [{}]".format(args.e))
+        quit()
+    
     avg_metrics = evaluate(env, action_fn, controller)
 
     if args.save:
         file = "evaluation/{}.txt".format(args.save)
         os.system("touch {}".format(file))
         f = open(file, "a")
-        f.write("=== EVAL FOR {} TESTS OF {} USING {} ===\n".format(args.tests, env.name, alg))
+        f.write("=== EVAL FOR {} TESTS OF {} USING {} ===\n".format(args.tests, env.name, args.e))
         for metric in avg_metrics:
             f.write("{} = {}\n".format(metric, avg_metrics[metric]))
         f.write("========================================\n")

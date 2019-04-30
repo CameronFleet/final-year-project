@@ -1,0 +1,53 @@
+NOMINAL TEST
+=== EVAL FOR 150 TESTS OF BoosterLander USING SGD ===
+Total Reward = 221.16800660444457
+Cold Gas Utilisation = 0.026222288024027377
+Fuel Expenditure = 1329.3385989940568
+Impact impulse = 511599.4400024414
+Booster Landed = 1.0
+Fails = 0
+========================================
+NOISY TEST
+=== EVAL FOR 150 TESTS OF NoisyBoosterLander USING SGD ===
+Total Reward = 217.68736727033797
+Cold Gas Utilisation = 0.10119506098693593
+Fuel Expenditure = 1341.066649291267
+Impact impulse = 507556.2398529053
+Booster Landed = 0.9933333333333333
+Fails = 0
+========================================
+ACCELERATION = 1 TEST
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING SGD ===
+Total Reward = 54.80800884421513
+Cold Gas Utilisation = 0.061346369512823656
+Fuel Expenditure = 795.6724191434233
+Impact impulse = 1218268.9469909668
+Booster Landed = 0.9866666666666667
+Fails = 0
+========================================
+GPS_FAILURE_CHANCE = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING SGD ===
+Total Reward = 56.609022676407015
+Cold Gas Utilisation = 0.0654854671208967
+Fuel Expenditure = 785.5001306203322
+Impact impulse = 1227563.2508850098
+Booster Landed = 0.9933333333333333
+Fails = 0
+========================================
+ROLL_FAILURE_CHANCE = 1
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING SGD ===
+Total Reward = -99.0458183204381
+Cold Gas Utilisation = 0.05437293561371309
+Fuel Expenditure = 216.2907779301935
+Impact impulse = 1780142.1495056152
+Booster Landed = 0.8133333333333334
+Fails = 0
+========================================
+SIDE_BOOSTER_FAILURE_CHANCE = 1=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING SGD ===
+Total Reward = 109.36229579623449
+Cold Gas Utilisation = 0.2373352597678804
+Fuel Expenditure = 1088.1955240054872
+Impact impulse = 722333.3396911621
+Booster Landed = 0.78
+Fails = 0
+========================================

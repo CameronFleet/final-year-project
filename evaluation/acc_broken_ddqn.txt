@@ -1,0 +1,8 @@
+=== EVAL FOR 150 TESTS OF BrokenBoosterLander USING DDQN ===
+Total Reward = 80.95945749582441
+Cold Gas Utilisation = 0.08485115321370301
+Fuel Expenditure = 1306.6803249504644
+Impact impulse = 734678.5547828674
+Booster Landed = 0.7933333333333333
+Fails = 13
+========================================

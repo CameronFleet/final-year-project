@@ -15,56 +15,14 @@ from gym import spaces
 from gym.utils import seeding, EzPickle
 
 import environment.config as config
+
 import time
 
-from environment.physics import drag_force, impulse  
+from environment.physics import drag_force, impulse 
+from environment.logic import episode_complete 
 from util import discretization_actions
 
 
-def episode_complete(legs, booster, env):
-    done = False
-    landed = None
-    imp = None
-    reward = None
-    vel = booster.body.linearVelocity
-    pos = booster.body.position
-    angle = booster.body.angle
-    
-    # Hits the ground
-    if env.game_over:
-        done = True
-        landed = False
-        reward = -50 - abs(vel.length)
-        imp = impulse(booster.body)
-
-    # Goes off screen
-    if pos.x < -50 or pos.x > config.WORLD_W + 50 or pos.y < -50 or pos.y > config.WORLD_H + 50:
-        done = True
-        landed = False
-        reward = -50
-
-    # Touchdown
-    if legs[0].ground_contact and legs[1].ground_contact :
-        done = True
-        landed = True
-        reward = +200 - 5*abs(vel.length)
-        imp = impulse(booster.body)
-
-        # Was 50 - abs(vel)
-        # Was 100 -3abs(vel)
-
-    # Manual termination    
-    if env.done: 
-        done = True
-        reward = 0
-
-    # Running for too long!
-    if env.steps > env.termination_time and env.time_terminated:
-        reward = -100 #Was 50
-        landed = False
-        done = True
-
-    return done, landed, imp, reward
 
 
 class BoosterLander(gym.Env, EzPickle):
@@ -245,7 +203,6 @@ class BoosterLander(gym.Env, EzPickle):
             else:
                 self.tracked_metrics[group] = metrics
 
-
     def step(self, action):
         self.steps += 1
         self.tracked_metrics = {}
@@ -344,8 +301,7 @@ class BoosterLander(gym.Env, EzPickle):
             reward -= 0.3*Ft #was 0.1
 
         # See if state is done
-        # TODO: Test
-        done, landed, impulse, completion_reward = episode_complete(self.legs, self.booster, self)    
+        done, landed, impulse, completion_reward = episode_complete(self)    
         if completion_reward is not None:
             reward += completion_reward
             

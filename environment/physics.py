@@ -18,3 +18,21 @@ def impulse(body):
 
 def fuel_usage(t, mass_flow_rate, avg_utilisation):
     return mass_flow_rate*t*avg_utilisation
+
+def transform_engine_power(power, fps):
+    return power * 1/fps
+
+def engine_impulse(power, body_tilt, gimbal = 0, dispersion = 0, orientation = 0):
+    angle = -body_tilt +gimbal + dispersion
+    Ft = power
+    Fx = Ft*math.sin(angle + orientation)
+    Fy = Ft*math.cos(angle + orientation)
+    return Fx, Fy
+
+def side_engine_impulse_position(body, direction, engine_height, engine_away):
+    return (body.position[0] 
+                - engine_height*math.sin(body.angle)
+                + direction*(engine_away/2)*math.cos(body.angle), 
+            body.position[1] 
+                + engine_height*math.cos(body.angle)
+                + direction*(engine_away/2)*math.sin(body.angle))

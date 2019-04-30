@@ -6,3 +6,6 @@ from environment.noisyboosterlander import NoisyBoosterLanderContinuous
 
 from environment.brokenboosterlander import BrokenBoosterLander
 from environment.brokenboosterlander import BrokenBoosterLanderContinuous
+
+
+from environment.booster import Booster

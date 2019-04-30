@@ -6,22 +6,22 @@ from environment import BoosterLander, NoisyBoosterLander, BrokenBoosterLander
 from algorithms.rl.estimators import SGDEstimator, DoubleNNEstimator, FixedNNEstimator, NNEstimator
 from algorithms.rl.q_learning import q_learning
 
-parser = argparse.ArgumentParser(prog="advanced-q-learning")
-parser.add_argument('--save-dir', default="default")
-parser.add_argument('--job', default="1")
+parser = argparse.ArgumentParser(prog="q-learning")
+parser.add_argument('--save-dir', default="default", help='Save directory for the experiment')
+parser.add_argument('--job', default="1", help='Unique identifier for this job')
 
-parser.add_argument('--learning-rate', default=0.00005, type=float)
-parser.add_argument('--memory-size', default=100000, type=int)
-parser.add_argument('--episodes', default=500, type=int)
-parser.add_argument('--batch-size', default=5, type=int)
-parser.add_argument('--update-target', default=10000, type=int)
+parser.add_argument('--learning-rate', default=0.00005, type=float, help='Learning rate for the estimator')
+parser.add_argument('--memory-size', default=100000, type=int, help='DDQN ONLY. Memory size of the memory used in experience replay')
+parser.add_argument('--episodes', default=500, type=int, help='Number of episodes the job should run until')
+parser.add_argument('--batch-size', default=5, type=int, help='DDQN ONLY. Size of the batch of experiences that is used in experience replay')
+parser.add_argument('--update-target', default=10000, type=int, help='DDQN ONLY. The rate at which the target network should be updated')
 
-parser.add_argument('-c', default=False, action='store_const', const=True)
-parser.add_argument('-l', default=False, action='store_const', const=True)
-parser.add_argument('-n', default=False, action='store_const', const=True)
-parser.add_argument('-b', default=False, action='store_const', const=True)
+parser.add_argument('-c', default=False, action='store_const', const=True, help='Environment is CartPole-v0')
+parser.add_argument('-l', default=False, action='store_const', const=True, help='Environment is LunarLander-v2')
+parser.add_argument('-n', default=False, action='store_const', const=True, help='Environment is NoisyBoosterLander')
+parser.add_argument('-b', default=False, action='store_const', const=True, help='Environment is BrokenBoosterLander')
 
-parser.add_argument('-e', default="DDQN")
+parser.add_argument('-e', default="DDQN", choices=['DDQN','DQN','NN','SGD'], help='The estimator used in the training')
 
 args = parser.parse_args(sys.argv[1:])
 

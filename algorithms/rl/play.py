@@ -17,7 +17,7 @@ def play(env, estimator, debug=False):
 
     while not done:
         state, reward, done, _ = env.step(action)
-        env.render(metrics=True)
+        # env.render()
 
         if debug:
             print(state[0])
@@ -36,20 +36,23 @@ def test(env, estimator, n= 100):
     for i in range(n):
         reward = play(env, estimator)
         total += reward
-        print("Iteration {} , Reward {}".format(i, reward))
+        # print("Iteration {} \n".format(i), end='\r')
+        # print("Reward {} \n".format(reward), end='\r')
+        print("Reward {}".format(reward), end='\r')
 
     return total/n
     
 if __name__ == '__main__':
     # env = gym.envs.make("CartPole-v1")
     # env.name = "CartPole-v1"
-    env = BrokenBoosterLander(time_terminated=True, moving_goal=False)
-    env.name = "BoosterLander"
-    # env = gym.envs.make("LunarLander-v2")
-    # env.name = "LunarLander-v2"
+    # env = BrokenBoosterLander(time_terminated=True, moving_goal=False)
+    # env.name = "BoosterLander"
+    env = gym.envs.make("LunarLander-v2")
+    env.name = "LunarLander-v2"
 
     estimator = DoubleNNEstimator(env,loaded=True)
-    estimator.load("/Users/cameronfleet/Desktop/eval/bl_broken_better_reward/bbl_acc0.5_gps0_rate0_thrust0/5/BoosterLander_2000")
+    # Solved lunar lander in 420 episodes! 
+    estimator.load("/Users/cameronfleet/Desktop/eval/ll_ddqn/lunarlander32/11/BEST_213")
 
     print(test(env, estimator))
     # play(env, estimator)
