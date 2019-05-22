@@ -172,6 +172,8 @@ class BoosterLander(gym.Env, EzPickle):
                                     config.ROLL_FAILURE_CHANCE,
                                     self.np_random,
                                     functor=True)
+        print(self.roll_rate.failure_code())
+
 
         return self.step(None)[0]
 

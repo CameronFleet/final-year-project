@@ -23,8 +23,8 @@ GOAL_H = 5
 GOAL_W = 100
 GOAL_X_SCALED = 0.5
 
-GOAL_MIN_X = 0.2
-GOAL_MAX_X = 0.8
+GOAL_MIN_X = 0.4
+GOAL_MAX_X = 0.6
 
 
 # (m) 3x40
