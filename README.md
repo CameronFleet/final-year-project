@@ -7,16 +7,14 @@
   - [Training](#training)
   - [Evaluation](#evaluation)
 
+https://user-images.githubusercontent.com/35966693/151722087-3786d91f-ed2a-4159-8ecb-22ca0d321a34.mov
+
 
 BoosterLander is an OpenAI environment based on [LunarLander-v2](https://gym.openai.com/envs/LunarLander-v2/). The environment is intended to simulate the landing of a SpaceX Falcon 9 rocket. Three variations of this environment exist:
 
   - BoosterLander (standard environment, no random noise simulating wind etc)
   - NoisyBoosterLander (environment with more noise, e.g. wind)
   - BrokenBoosterLander (environment where booster enters various sensor failure modes)
-
-
-Examples:
-![](docs/video/ddqn_acc.mov)
 
 ## Getting Started
 
