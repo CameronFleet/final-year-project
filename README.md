@@ -1,10 +1,37 @@
 # BoosterLander
 
-BoosterLander is an OpenAI environment made to simulate the landing of a SpaceX Falcon 9 rocket. Six environments exist
+- [BoosterLander](#boosterlander)
+  - [Getting Started](#getting-started)
+    - [Install](#install)
+    - [Run](#run)
+  - [Training](#training)
+  - [Evaluation](#evaluation)
 
-  - BoosterLander and BoosterLanderContinuous
-  - NoisyBoosterLander and NoisyBoosterLanderContinuous
-  - BrokenBoosterLander and BrokenBoosterLanderContinuous
+
+BoosterLander is an OpenAI environment based on [LunarLander-v2](https://gym.openai.com/envs/LunarLander-v2/). The environment is intended to simulate the landing of a SpaceX Falcon 9 rocket. Three variations of this environment exist:
+
+  - BoosterLander (standard environment, no random noise simulating wind etc)
+  - NoisyBoosterLander (environment with more noise, e.g. wind)
+  - BrokenBoosterLander (environment where booster enters various sensor failure modes)
+
+
+Examples:
+![](./docs/video/ddqn_aacc.mov)
+
+## Getting Started
+
+### Install
+```sh
+python3 -m venv venv/
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Run
+Run the 'evaluation' using the provided pre-trained weights to test the install has worked as expected
+```python
+python evaluation.py -env-n -e DDQN -p algorithms/rl/weights/best/ddqn/BEST_248
+```
 
 ## Training
 
@@ -27,6 +54,7 @@ $ python -m sarsa
 ```
 
 ## Evaluation
+Evaluation allows you to test the pre-trained models in the different environment. The models below were trained over the course of weeks on a unviersity computer cluster.
 
 To evaluate a PID controller for BoosterLander
 ```sh
