@@ -9,8 +9,7 @@
 
 https://user-images.githubusercontent.com/35966693/151722087-3786d91f-ed2a-4159-8ecb-22ca0d321a34.mov
 
-
-BoosterLander is an OpenAI environment based on [LunarLander-v2](https://gym.openai.com/envs/LunarLander-v2/). The environment is intended to simulate the landing of a SpaceX Falcon 9 rocket. Three variations of this environment exist:
+BoosterLander is an OpenAI environment based on [LunarLander-v2](https://gym.openai.com/envs/LunarLander-v2/). The environment is intended to simulate the landing of a SpaceX Falcon 9 rocket. See the full dissertation based on this project [here](https://github.com/CameronFleet/final-year-project/files/7967167/main.pdf). Three variations of this environment exist:
 
   - BoosterLander (standard environment, no random noise simulating wind etc)
   - NoisyBoosterLander (environment with more noise, e.g. wind)
