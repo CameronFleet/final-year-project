@@ -16,7 +16,7 @@ BoosterLander is an OpenAI environment based on [LunarLander-v2](https://gym.ope
 
 
 Examples:
-![](./docs/video/ddqn_aacc.mov)
+![](./docs/video/ddqn_acc.mov)
 
 ## Getting Started
 
